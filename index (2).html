@@ -1,0 +1,2410 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schoolmes - Aventure Éducative</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+<!-- Firebase SDK v9 compat — chargement robuste avec CDN alternatif -->
+<script>
+// Pre-check: on vérifie que l'internet est dispo
+window._fbLoadAttempt = 0;
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"
+  onerror="window._fbCDNFailed=true"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"
+  onerror="window._fbCDNFailed=true"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"
+  onerror="window._fbCDNFailed=true"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Press Start 2P', cursive;
+  background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 50%, #ec4899 100%);
+  color: white;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+.screen {
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 25px;
+  background: rgba(0,0,0,0.7);
+  border-radius: 20px;
+  border: 4px solid #fbbf24;
+  box-shadow: 0 0 30px rgba(251,191,36,0.5);
+  display: none;
+}
+
+.screen.active { display: block; }
+
+.game-title {
+  font-size: 2.5rem;
+  text-align: center;
+  color: #fbbf24;
+  margin-bottom: 30px;
+  text-shadow: 0 0 20px rgba(251,191,36,0.8);
+}
+
+button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 0.7rem;
+  cursor: pointer;
+  margin: 8px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  transition: all 0.3s;
+}
+
+button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(16,185,129,0.6);
+}
+
+button.primary { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+button.danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
+button.gold { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+input {
+  padding: 12px;
+  border: 2px solid #fbbf24;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.5);
+  color: white;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 0.7rem;
+  margin: 8px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.input-group {
+  margin: 20px auto;
+  max-width: 450px;
+  text-align: center;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: #fbbf24;
+  font-size: 0.8rem;
+}
+
+.stats-bar {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  padding: 15px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 15px;
+  margin-bottom: 20px;
+}
+
+.stat {
+  text-align: center;
+  padding: 10px;
+  min-width: 150px;
+}
+
+.stat-label {
+  font-size: 0.6rem;
+  color: #9ca3af;
+  margin-bottom: 5px;
+}
+
+.stat-value {
+  font-size: 1rem;
+  color: #fbbf24;
+}
+
+.xp-bar {
+  width: 100%;
+  height: 25px;
+  background: rgba(0,0,0,0.7);
+  border-radius: 15px;
+  overflow: hidden;
+  border: 2px solid #10b981;
+  margin-top: 10px;
+}
+
+.xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #059669);
+  transition: width 0.5s;
+  text-align: center;
+  line-height: 25px;
+  font-size: 0.6rem;
+}
+
+#map {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 8px;
+  margin: 20px 0;
+}
+
+.tile {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  border: 2px solid rgba(255,255,255,0.2);
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.tile:hover { transform: scale(1.05); }
+
+.tile.plains { background: linear-gradient(135deg, #065f46, #064e3b); }
+.tile.forest { background: linear-gradient(135deg, #065f46, #064e3b); }
+.tile.desert { background: linear-gradient(135deg, #d97706, #b45309); }
+.tile.snow { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+.tile.volcano { background: linear-gradient(135deg, #dc2626, #991b1b); }
+.tile.ocean { background: linear-gradient(135deg, #1d4ed8, #1e40af); }
+.tile.boss { background: linear-gradient(135deg, #7c3aed, #6d28d9); border: 3px solid #fbbf24; }
+
+.tile.current { border: 3px solid #10b981; box-shadow: 0 0 20px #10b981; }
+.tile.locked { opacity: 0.3; cursor: not-allowed; }
+.tile.completed { opacity: 0.6; }
+
+.tile-number {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: 0.5rem;
+  color: rgba(255,255,255,0.6);
+}
+
+.question-container {
+  margin: 20px 0;
+  padding: 20px;
+  background: rgba(59,130,246,0.1);
+  border-radius: 12px;
+  border: 2px solid #3b82f6;
+}
+
+.question-text {
+  font-size: 0.9rem;
+  line-height: 1.8;
+  margin-bottom: 20px;
+  color: #fbbf24;
+}
+
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.shop-item {
+  background: rgba(0,0,0,0.6);
+  padding: 20px;
+  border-radius: 12px;
+  border: 2px solid #8b5cf6;
+  text-align: center;
+}
+
+.shop-item:hover {
+  transform: translateY(-5px);
+  border-color: #fbbf24;
+}
+
+.shop-item-icon { font-size: 2.5rem; margin-bottom: 10px; }
+.shop-item-name { font-size: 0.8rem; color: #fbbf24; margin-bottom: 8px; }
+.shop-item-desc { font-size: 0.6rem; color: #9ca3af; margin-bottom: 12px; line-height: 1.5; }
+.shop-item-price { font-size: 0.9rem; color: #10b981; margin-bottom: 12px; }
+
+.leaderboard-item {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  margin: 10px 0;
+  background: rgba(0,0,0,0.5);
+  border-radius: 12px;
+  border: 2px solid rgba(251,191,36,0.3);
+}
+
+.leaderboard-item.podium {
+  background: linear-gradient(135deg, rgba(251,191,36,0.2), rgba(245,158,11,0.2));
+  border-color: #fbbf24;
+}
+
+.leaderboard-rank {
+  font-size: 1.5rem;
+  margin-right: 20px;
+  min-width: 50px;
+  text-align: center;
+}
+
+.leaderboard-info { flex: 1; }
+.leaderboard-name { font-size: 0.9rem; color: #fbbf24; margin-bottom: 5px; }
+.leaderboard-stats { font-size: 0.6rem; color: #9ca3af; }
+
+.badge {
+  display: inline-block;
+  padding: 6px 12px;
+  margin: 4px;
+  border-radius: 20px;
+  font-size: 0.6rem;
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  border: 2px solid #fbbf24;
+}
+
+.badge.admin {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: #000;
+  font-weight: bold;
+}
+
+.pixel-grid {
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: 1px;
+  width: 320px;
+  height: 320px;
+  margin: 0 auto 20px;
+  background: #000;
+  border: 2px solid #fbbf24;
+}
+
+.pixel {
+  aspect-ratio: 1;
+  cursor: pointer;
+}
+
+.color-palette {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+
+.color-option {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 3px solid transparent;
+}
+
+.color-option.selected {
+  border-color: #fbbf24;
+  box-shadow: 0 0 15px currentColor;
+}
+
+.admin-panel {
+  background: linear-gradient(135deg, rgba(251,191,36,0.2), rgba(245,158,11,0.2));
+  padding: 20px;
+  border-radius: 15px;
+  border: 3px solid #fbbf24;
+  margin: 20px 0;
+  text-align: center;
+}
+
+/* NOUVEAUX STYLES POUR LES BONUS */
+.bonus-bar {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 15px 0;
+  padding: 15px;
+  background: rgba(139,92,246,0.2);
+  border-radius: 12px;
+  border: 2px solid #8b5cf6;
+}
+
+.bonus-button {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+  border: 2px solid #fbbf24;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bonus-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(139,92,246,0.8);
+}
+
+.bonus-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.bonus-count {
+  background: rgba(0,0,0,0.5);
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 0.6rem;
+}
+
+.choice-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.choice-btn {
+  padding: 15px 20px;
+  background: linear-gradient(135deg, rgba(59,130,246,0.3), rgba(37,99,235,0.3));
+  border: 2px solid #3b82f6;
+  border-radius: 12px;
+  color: white;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 0.65rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-align: left;
+  line-height: 1.6;
+}
+
+.choice-btn:hover {
+  background: linear-gradient(135deg, rgba(59,130,246,0.5), rgba(37,99,235,0.5));
+  border-color: #fbbf24;
+  transform: translateX(5px);
+}
+
+.choice-btn.selected {
+  background: linear-gradient(135deg, rgba(251,191,36,0.4), rgba(245,158,11,0.4));
+  border-color: #fbbf24;
+}
+
+.lives-counter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  padding: 15px;
+  background: rgba(239,68,68,0.2);
+  border-radius: 12px;
+  border: 2px solid #ef4444;
+  margin-bottom: 20px;
+}
+
+.heart {
+  font-size: 2rem;
+  transition: all 0.3s;
+}
+
+.heart.lost {
+  opacity: 0.2;
+  filter: grayscale(100%);
+}
+
+@media (max-width: 768px) {
+  .game-title { font-size: 1.5rem; }
+  button { font-size: 0.6rem; padding: 10px 18px; }
+  #map { grid-template-columns: repeat(5, 1fr); }
+  .bonus-bar { flex-direction: column; }
+}
+
+/* CLASSEMENT EN LIGNE */
+.leaderboard-online {
+  max-height: 500px;
+  overflow-y: auto;
+  margin: 20px 0;
+}
+
+.leaderboard-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  margin: 8px 0;
+  background: rgba(0,0,0,0.5);
+  border-radius: 12px;
+  border: 2px solid rgba(251,191,36,0.3);
+  transition: all 0.3s;
+}
+.leaderboard-item:hover { border-color: rgba(251,191,36,0.7); }
+.leaderboard-item.me { border-color: #10b981; background: rgba(16,185,129,0.15); }
+.leaderboard-item.podium-1 { background: linear-gradient(135deg, rgba(255,215,0,0.25), rgba(251,191,36,0.1)); border-color: gold; }
+.leaderboard-item.podium-2 { background: linear-gradient(135deg, rgba(192,192,192,0.25), rgba(180,180,180,0.1)); border-color: silver; }
+.leaderboard-item.podium-3 { background: linear-gradient(135deg, rgba(205,127,50,0.25), rgba(180,100,30,0.1)); border-color: #cd7f32; }
+
+.lb-rank { font-size: 1.4rem; min-width: 55px; text-align: center; }
+.lb-avatar { width: 40px; height: 40px; border-radius: 8px; margin-right: 12px; background: #222; border: 2px solid #fbbf24; }
+.lb-info { flex: 1; }
+.lb-name { font-size: 0.75rem; color: #fbbf24; margin-bottom: 4px; }
+.lb-stats { font-size: 0.55rem; color: #9ca3af; }
+.lb-score { font-size: 0.8rem; color: #10b981; text-align: right; }
+
+/* ADMIN PANEL AMÉLIORÉ */
+.admin-section {
+  background: rgba(0,0,0,0.4);
+  border: 2px solid #fbbf24;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 15px 0;
+}
+.admin-section h3 { color: #fbbf24; font-size: 0.8rem; margin-bottom: 15px; }
+.admin-player-list { max-height: 300px; overflow-y: auto; margin: 10px 0; }
+.admin-player-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  margin: 5px 0;
+  background: rgba(0,0,0,0.4);
+  border-radius: 8px;
+  border: 1px solid rgba(251,191,36,0.2);
+  font-size: 0.6rem;
+}
+.admin-player-row:hover { border-color: #fbbf24; }
+
+/* MINI AVATAR ACCUEIL & CLASSEMENT */
+.mini-avatar-canvas {
+  image-rendering: pixelated;
+  border-radius: 6px;
+  border: 2px solid #fbbf24;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.home-player-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* AUTO-SAVE INDICATOR */
+#autosaveIndicator {
+  position: fixed;
+  bottom: 15px;
+  right: 15px;
+  background: rgba(16,185,129,0.9);
+  color: white;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 0.5rem;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+#autosaveIndicator.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- AUTO-SAVE INDICATOR -->
+<div id="autosaveIndicator">⚙️...</div>
+
+<!-- ERREUR CHARGEMENT FIREBASE -->
+<div id="fbLoadError" style="display:none; position:fixed; top:0; left:0; right:0; background:#dc2626; color:white; padding:15px; text-align:center; font-family:'Press Start 2P',cursive; font-size:0.65rem; z-index:99999;">
+  ⚠️ Firebase ne se charge pas — vérifie ta connexion internet et que tu n'ouvres pas le fichier en file://
+  <br><span style="font-size:0.5rem; margin-top:5px; display:block;">Utilise VS Code + Live Server, ou XAMPP, ou double-clique depuis un serveur web</span>
+</div>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="screen active">
+  <h1 class="game-title">🎮 SCHOOLMES 🎮</h1>
+  <p style="text-align:center; font-size:0.8rem; margin-bottom:30px; color:#9ca3af;">
+    L'aventure éducative - 10 000 niveaux !
+  </p>
+  
+  <div class="input-group">
+    <label>📝 Pseudo</label>
+    <input type="text" id="loginUsername" placeholder="Ton pseudo">
+  </div>
+  
+  <div class="input-group">
+    <label>🔐 Code (min 6 caractères)</label>
+    <input type="password" id="loginCode" placeholder="Ton code secret">
+  </div>
+  
+  <div style="text-align:center; margin-top:30px;">
+    <button class="primary" onclick="login()">🚀 Connexion / Inscription</button>
+  </div>
+  
+  <div id="loginFirebaseStatus" style="text-align:center; margin-top:20px; font-size:0.55rem; color:#9ca3af;">
+    ⏳ Vérification Firebase...
+  </div>
+</div>
+
+<!-- HOME -->
+<div id="homeScreen" class="screen">
+  <h1 class="game-title">🏠 ACCUEIL</h1>
+  
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="stat-label">👤 Joueur</div>
+      <div class="home-player-header">
+        <canvas id="homeAvatarCanvas" class="mini-avatar-canvas" width="40" height="40" style="display:none;"></canvas>
+        <div class="stat-value" id="homeUsername">-</div>
+      </div>
+      <div id="homePlayerBadges"></div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">⭐ Niveau</div>
+      <div class="stat-value" id="homeLevel">-</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">💰 Pièces</div>
+      <div class="stat-value" id="homeCoins">-</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">✨ XP</div>
+      <div class="stat-value" id="homeXP">-</div>
+    </div>
+  </div>
+  
+  <div id="adminPanelHome"></div>
+  
+  <!-- Indicateur Firebase -->
+  <div id="firebaseStatus" style="text-align:center; margin:15px 0; padding:10px; background:rgba(16,185,129,0.2); border-radius:10px; font-size:0.6rem; display:none;">
+    <span style="color:#10b981;">🔥 Connecté à Firebase</span>
+  </div>
+  
+  <div style="text-align:center; margin:30px 0;">
+    <button class="primary" onclick="showScreen('gameScreen'); initGame();">🎮 Jouer</button>
+    <button class="gold" onclick="showScreen('shopScreen'); renderShop();">🛒 Boutique</button>
+    <button onclick="showScreen('avatarScreen'); initAvatarEditor();">🎨 Avatar</button>
+    <button style="background:linear-gradient(135deg,#6366f1,#4f46e5);" onclick="showScreen('leaderboardScreen'); renderLeaderboard();">🏆 Classement</button>
+    <button style="background:linear-gradient(135deg,#10b981,#059669);" onclick="manualSave()">💾 Sauvegarder</button>
+    <button class="danger" onclick="logout()">🚪 Déconnexion</button>
+  </div>
+</div>
+
+<!-- CLASSEMENT EN LIGNE -->
+<div id="leaderboardScreen" class="screen">
+  <button class="danger" onclick="showScreen('homeScreen'); updateHomeScreen();">⬅️ Retour</button>
+  <h2 class="game-title">🏆 CLASSEMENT MONDIAL</h2>
+  
+  <div style="display:flex; justify-content:center; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+    <button onclick="renderLeaderboard('maxLevel')" id="lbBtnLevel" class="primary">🗺️ Niveaux atteints</button>
+    <button onclick="renderLeaderboard('level')" id="lbBtnXP">⭐ Niveau joueur</button>
+    <button onclick="renderLeaderboard('coins')" id="lbBtnCoins" class="gold">💰 Pièces</button>
+  </div>
+  
+  <div id="lbLoading" style="text-align:center; padding:30px; color:#9ca3af; font-size:0.7rem;">⏳ Chargement...</div>
+  <div class="leaderboard-online" id="leaderboardList"></div>
+  <div id="myRank" style="text-align:center; margin-top:15px; font-size:0.65rem; color:#fbbf24;"></div>
+</div>
+
+<!-- GAME -->
+<div id="gameScreen" class="screen">
+  <button class="danger" onclick="showScreen('homeScreen'); updateHomeScreen();">⬅️ Retour</button>
+  
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="stat-label">NIVEAU JOUEUR</div>
+      <div class="stat-value">⭐ <span id="gameLevel">-</span></div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">PIÈCES</div>
+      <div class="stat-value">💰 <span id="gameCoins">-</span></div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">EXPÉRIENCE</div>
+      <div class="stat-value" id="gameXP">-</div>
+      <div class="xp-bar"><div class="xp-fill" id="xpBar">0%</div></div>
+    </div>
+  </div>
+  
+  <div id="map"></div>
+</div>
+
+<!-- QUIZ -->
+<div id="quizScreen" class="screen">
+  <h2 class="game-title" id="quizLevelTitle">Niveau X</h2>
+  <p style="text-align:center; font-size:0.9rem; margin-bottom:20px;" id="quizBiomeInfo">-</p>
+  
+  <!-- COMPTEUR DE VIES -->
+  <div class="lives-counter">
+    <div style="font-size:0.8rem; color:#fbbf24;">❤️ VIES:</div>
+    <div id="heartsDisplay"></div>
+    <div style="font-size:0.7rem; color:#9ca3af;"><span id="errorsCount">0</span>/5 erreurs</div>
+  </div>
+  
+  <div class="question-container">
+    <div class="question-text" id="questionText">-</div>
+    
+    <!-- BARRE DE BONUS -->
+    <div class="bonus-bar" id="bonusBar">
+      <div style="font-size:0.7rem; color:#fbbf24; margin-bottom:10px; width:100%; text-align:center;">✨ MES BONUS ✨</div>
+      <!-- Les bonus seront ajoutés ici dynamiquement -->
+    </div>
+    
+    <!-- CHOIX MULTIPLES (QCM) -->
+    <div id="choiceButtons" class="choice-buttons" style="display:none;"></div>
+    
+    <!-- SAISIE TEXTE -->
+    <div class="input-group" id="textAnswerGroup">
+      <input type="text" id="answerInput" placeholder="Ta réponse..." onkeypress="if(event.key==='Enter') submitAnswer()">
+    </div>
+    
+    <div id="quizFeedback" style="text-align:center; margin:20px 0; font-size:0.8rem;"></div>
+    
+    <div style="text-align:center;">
+      <button class="primary" onclick="submitAnswer()">✅ Valider</button>
+      <button class="gold" onclick="skipQuestion()">⏭️ Passer (<span id="skipCost">50</span> 💰)</button>
+      <button class="danger" onclick="quitQuiz()">❌ Quitter</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAME OVER -->
+<div id="gameOverScreen" class="screen">
+  <h1 class="game-title" style="color:#ef4444;">💀 GAME OVER 💀</h1>
+  
+  <div style="text-align:center; font-size:1.2rem; margin:30px 0; color:#9ca3af;">
+    <p>Tu as fait 5 erreurs !</p>
+    <p style="margin-top:20px; font-size:0.8rem;">Statistiques de cette partie :</p>
+  </div>
+  
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="stat-label">NIVEAU ATTEINT</div>
+      <div class="stat-value" id="goLevel">-</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">QUESTIONS RÉUSSIES</div>
+      <div class="stat-value" id="goCorrect">-</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">PIÈCES GAGNÉES</div>
+      <div class="stat-value" id="goCoins">-</div>
+    </div>
+  </div>
+  
+  <div style="text-align:center; margin-top:30px;">
+    <button class="primary" onclick="restartGame()">🔄 Rejouer</button>
+    <button class="danger" onclick="showScreen('homeScreen'); updateHomeScreen();">🏠 Menu</button>
+  </div>
+</div>
+
+<!-- SHOP -->
+<div id="shopScreen" class="screen">
+  <button class="danger" onclick="showScreen('homeScreen'); updateHomeScreen();">⬅️ Retour</button>
+  
+  <h2 class="game-title">🛒 BOUTIQUE</h2>
+  <p style="text-align:center; font-size:0.9rem; margin-bottom:20px;">💰 <span id="shopCoins">0</span> pièces</p>
+  
+  <div class="shop-grid" id="shopItems"></div>
+</div>
+
+</div>
+
+<!-- AVATAR -->
+<div id="avatarScreen" class="screen">
+  <button class="danger" onclick="showScreen('homeScreen'); updateHomeScreen();">⬅️ Retour</button>
+  
+  <h2 class="game-title">🎨 ÉDITEUR D'AVATAR</h2>
+  
+  <div class="pixel-grid" id="pixelGrid"></div>
+  
+  <div class="color-palette" id="colorPalette"></div>
+  
+  <div style="text-align:center; margin-top:20px;">
+    <button class="primary" onclick="saveAvatar()">💾 Sauvegarder</button>
+    <button onclick="randomAvatar()">🎲 Aléatoire</button>
+    <button class="danger" onclick="clearAvatar()">🗑️ Effacer</button>
+  </div>
+</div>
+
+<script>
+// ========================================
+// FIREBASE CONFIGURATION
+// ========================================
+// ⚠️ IMPORTANT: Remplace ces valeurs par ta propre configuration Firebase
+// Tu peux obtenir ces informations depuis la console Firebase:
+// https://console.firebase.google.com/ > Paramètres du projet > Applications
+
+// ========================================
+// ⚙️ COLLE TA CONFIG FIREBASE ICI
+// Console Firebase → Paramètres → Tes applications → Config
+// ========================================
+const firebaseConfig = {
+
+
+  apiKey: "AIzaSyAf0oJHNukISOzRkgjAFNPbR_irvyXeDyM",
+
+
+  authDomain: "schoolmes-games.firebaseapp.com",
+
+
+  databaseURL: "https://schoolmes-games-default-rtdb.europe-west1.firebasedatabase.app",
+
+
+  projectId: "schoolmes-games",
+
+
+  storageBucket: "schoolmes-games.firebasestorage.app",
+
+
+  messagingSenderId: "623068569178",
+
+
+  appId: "1:623068569178:web:657b9188d85d7ae89c8263"
+
+
+};
+// ========================================
+
+// Initialiser Firebase de façon sécurisée
+let database = null;
+let auth = null;
+let firebaseReady = false;
+let currentUserId = null;
+
+function initFirebase() {
+  const statusEl = document.getElementById('loginFirebaseStatus');
+  const setStatus = (msg, color) => {
+    if (statusEl) statusEl.innerHTML = '<span style="color:' + color + ';">' + msg + '</span>';
+  };
+
+  // Scripts non chargés ?
+  if (typeof firebase === "undefined" || window._fbCDNFailed) {
+    console.error("❌ Scripts Firebase non chargés — Internet requis, ou ouvre via un serveur (pas double-clic)");
+    setStatus("❌ Firebase non chargé — vérifie ta connexion internet", "#ef4444");
+    firebaseReady = false;
+    return;
+  }
+
+  try {
+    // Éviter double init si rechargement
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+    database = firebase.database();
+    auth = firebase.auth();
+    firebaseReady = true;
+    console.log("✅ Firebase initialisé:", firebaseConfig.projectId);
+    setStatus("🔥 Firebase prêt — connecte-toi !", "#10b981");
+
+    // Surveiller l'état de connexion
+    auth.onAuthStateChanged((user) => {
+      const loginScreen = document.getElementById('loginScreen');
+      const isOnLogin = loginScreen && loginScreen.classList.contains('active');
+      if (!isOnLogin) return;
+      if (user) {
+        setStatus("🔥 Firebase connecté ✓", "#10b981");
+      } else {
+        setStatus("🔥 Firebase prêt — connecte-toi !", "#10b981");
+      }
+    });
+
+  } catch(e) {
+    console.error("❌ Firebase ERREUR:", e.message);
+    setStatus("❌ Erreur Firebase: " + e.message, "#ef4444");
+    firebaseReady = false;
+  }
+}
+
+// ========================================
+// GLOBALS
+// ========================================
+let player = null;
+let currentLevel = 1;
+let currentQuestion = null;
+let skipCost = 50;
+let pixelData = [];
+let selectedColor = '#ff0000';
+
+// NOUVEAUX: pour le système d'erreurs
+let sessionErrors = 0;
+let sessionCorrect = 0;
+let sessionCoinsStart = 0;
+let failedQuestions = new Set(); // Questions déjà ratées (ne pas les proposer à nouveau)
+
+const GRID_SIZE = 16;
+const COLORS = ['#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500', '#800080', '#ff69b4', '#8b4513'];
+
+const BIOMES = [
+  { range: [1, 1000], name: 'Plaines', emoji: '🌾', class: 'plains' },
+  { range: [1001, 2000], name: 'Forêt', emoji: '🌲', class: 'forest' },
+  { range: [2001, 3000], name: 'Désert', emoji: '🏜️', class: 'desert' },
+  { range: [3001, 4000], name: 'Neige', emoji: '❄️', class: 'snow' },
+  { range: [4001, 5000], name: 'Volcan', emoji: '🌋', class: 'volcano' },
+  { range: [5001, 10000], name: 'Océan', emoji: '🌊', class: 'ocean' }
+];
+
+const SHOP_ITEMS = [
+  // ---- CONSOMMABLES ----
+  { id: 1,  emoji: '💡', name: 'Indice',          desc: 'Révèle une lettre de la réponse',      price: 100,  category: '🎒 Consommables' },
+  { id: 2,  emoji: '⏭️', name: 'Passer ×1',       desc: 'Passe 1 question gratuitement',        price: 150,  category: '🎒 Consommables' },
+  { id: 3,  emoji: '🔄', name: '2ème Chance',      desc: 'Efface une erreur (1 vie recupérée)',  price: 200,  category: '🎒 Consommables' },
+  { id: 8,  emoji: '💡', name: 'Pack 3 Indices',   desc: '3 indices en une fois',               price: 250,  category: '🎒 Consommables' },
+  { id: 9,  emoji: '⏭️', name: 'Pack 3 Passes',    desc: '3 passes en une fois',                price: 400,  category: '🎒 Consommables' },
+  { id: 10, emoji: '🔄', name: 'Pack 3 Chances',   desc: '3 secondes chances en une fois',      price: 550,  category: '🎒 Consommables' },
+  { id: 11, emoji: '🛡️', name: 'Bouclier',         desc: 'Bloque la prochaine erreur',          price: 350,  category: '🎒 Consommables' },
+  { id: 12, emoji: '🎯', name: 'Viseur',           desc: 'Élimine 2 mauvais choix (QCM)',       price: 175,  category: '🎒 Consommables' },
+  { id: 13, emoji: '⏳', name: 'Gel du temps',     desc: 'Gèle 1 erreur (ne compte pas)',       price: 300,  category: '🎒 Consommables' },
+  // ---- PIÈCES & XP ----
+  { id: 4,  emoji: '💰', name: 'Pack Pièces',      desc: '+500 pièces instantanément',          price: 50,   category: '💰 Pièces & XP' },
+  { id: 14, emoji: '💎', name: 'Gros Pack',        desc: '+2 000 pièces instantanément',        price: 175,  category: '💰 Pièces & XP' },
+  { id: 15, emoji: '🤑', name: 'Méga Pack',        desc: '+5 000 pièces instantanément',        price: 400,  category: '💰 Pièces & XP' },
+  { id: 5,  emoji: '⚡', name: 'Boost XP ×2',      desc: 'Double XP pendant 10 questions',      price: 300,  category: '💰 Pièces & XP' },
+  { id: 16, emoji: '🌟', name: 'Boost XP ×3',      desc: 'Triple XP pendant 10 questions',      price: 700,  category: '💰 Pièces & XP' },
+  { id: 17, emoji: '💸', name: 'Bonus Pièces ×2',  desc: 'Double pièces pendant 20 questions',  price: 500,  category: '💰 Pièces & XP' },
+  // ---- BADGES ----
+  { id: 6,  emoji: '🎓', name: 'Badge Élite',      desc: 'Badge exclusif affiché sur ton profil', price: 1000, category: '🏅 Badges' },
+  { id: 7,  emoji: '👑', name: 'Badge Légende',    desc: 'Le badge ultime des champions',       price: 5000, category: '🏅 Badges' },
+  { id: 18, emoji: '🔥', name: 'Badge Flamme',     desc: 'Tu es en feu !',                      price: 800,  category: '🏅 Badges' },
+  { id: 19, emoji: '⚔️', name: 'Badge Guerrier',   desc: 'Brave comme un chevalier',            price: 1200, category: '🏅 Badges' },
+  { id: 20, emoji: '🌈', name: 'Badge Arc-en-ciel', desc: 'Pour les esprits colorés',           price: 900,  category: '🏅 Badges' },
+  { id: 21, emoji: '🦄', name: 'Badge Licorne',    desc: 'Rare et magique',                     price: 2500, category: '🏅 Badges' },
+  { id: 22, emoji: '🧠', name: 'Badge Génie',      desc: 'Pour les cerveaux hors-norme',        price: 3000, category: '🏅 Badges' },
+  { id: 23, emoji: '🏆', name: 'Badge Champion',   desc: 'Pour les vrais vainqueurs',           price: 4000, category: '🏅 Badges' },
+  // ---- SPÉCIAUX ----
+  { id: 24, emoji: '🎲', name: 'Loterie',          desc: 'Tente ta chance : 50–2000 pièces',    price: 100,  category: '✨ Spéciaux' },
+  { id: 25, emoji: '📦', name: 'Coffre Mystère',   desc: 'Contient un bonus surprise !',        price: 250,  category: '✨ Spéciaux' },
+  { id: 26, emoji: '🎁', name: 'Mega Coffre',      desc: 'Coffre premium = gros bonus',         price: 600,  category: '✨ Spéciaux' },
+  { id: 27, emoji: '♻️', name: 'Reset Erreurs',    desc: 'Remet à 0 tes erreurs de session',   price: 1500, category: '✨ Spéciaux' },
+];
+
+// QUESTIONS (adaptées pour validation flexible)
+function generateQuestion(level) {
+  const isBoss = level % 100 === 0;
+  
+  // Vérifier si cette question a déjà été ratée
+  let questionData;
+  let attempts = 0;
+  do {
+    questionData = getQuestionForLevel(level, isBoss);
+    attempts++;
+  } while (failedQuestions.has(questionData.id) && attempts < 10);
+  
+  return questionData;
+}
+
+// QUESTIONS — SYSTÈME GÉNÉRATEUR 10 000 QUESTIONS
+function getQuestionForLevel(level, isBoss) {
+  // Base de données de questions par catégories
+  const questionBank = {
+    // MATHÉMATIQUES (2000 questions)
+    math: {
+      additions: Array.from({length: 200}, (_, i) => {
+        const a = Math.floor(Math.random() * 50) + 1;
+        const b = Math.floor(Math.random() * 50) + 1;
+        return { type: 'text', question: `Combien font ${a} + ${b} ?`, answer: String(a + b) };
+      }),
+      soustractions: Array.from({length: 200}, (_, i) => {
+        const a = Math.floor(Math.random() * 100) + 10;
+        const b = Math.floor(Math.random() * a);
+        return { type: 'text', question: `Combien font ${a} - ${b} ?`, answer: String(a - b) };
+      }),
+      multiplications: Array.from({length: 200}, (_, i) => {
+        const a = Math.floor(Math.random() * 15) + 1;
+        const b = Math.floor(Math.random() * 15) + 1;
+        return { type: 'text', question: `Combien font ${a} × ${b} ?`, answer: String(a * b) };
+      }),
+      divisions: Array.from({length: 200}, (_, i) => {
+        const b = Math.floor(Math.random() * 12) + 1;
+        const result = Math.floor(Math.random() * 20) + 1;
+        const a = b * result;
+        return { type: 'text', question: `Combien font ${a} ÷ ${b} ?`, answer: String(result) };
+      }),
+      geometrie: [
+        { type: 'qcm', question: 'Combien de côtés a un triangle ?', choices: ['2', '3', '4', '5'], answer: '3' },
+        { type: 'qcm', question: 'Combien de côtés a un carré ?', choices: ['3', '4', '5', '6'], answer: '4' },
+        { type: 'qcm', question: 'Combien de côtés a un pentagone ?', choices: ['4', '5', '6', '7'], answer: '5' },
+        { type: 'qcm', question: 'Combien de côtés a un hexagone ?', choices: ['5', '6', '7', '8'], answer: '6' },
+        { type: 'qcm', question: 'Combien de côtés a un octogone ?', choices: ['6', '7', '8', '9'], answer: '8' },
+        { type: 'qcm', question: 'Combien de degrés dans un angle droit ?', choices: ['45', '60', '90', '180'], answer: '90' },
+        { type: 'qcm', question: 'Combien de degrés dans un cercle complet ?', choices: ['180', '270', '360', '400'], answer: '360' },
+        { type: 'text', question: 'Combien de faces a un cube ?', answer: '6' },
+        { type: 'text', question: 'Combien d\'arêtes a un cube ?', answer: '12' },
+        { type: 'text', question: 'Combien de sommets a un cube ?', answer: '8' }
+      ]
+    },
+
+    // GÉOGRAPHIE (2000 questions)
+    geo: {
+      capitales: [
+        { type: 'qcm', question: 'Capitale de la France ?', choices: ['Lyon', 'Marseille', 'Paris', 'Bordeaux'], answer: 'Paris' },
+        { type: 'qcm', question: 'Capitale de l\'Italie ?', choices: ['Milan', 'Rome', 'Venise', 'Florence'], answer: 'Rome' },
+        { type: 'qcm', question: 'Capitale de l\'Espagne ?', choices: ['Barcelone', 'Séville', 'Madrid', 'Valence'], answer: 'Madrid' },
+        { type: 'qcm', question: 'Capitale de l\'Allemagne ?', choices: ['Munich', 'Hambourg', 'Francfort', 'Berlin'], answer: 'Berlin' },
+        { type: 'qcm', question: 'Capitale du Royaume-Uni ?', choices: ['Manchester', 'Londres', 'Édimbourg', 'Liverpool'], answer: 'Londres' },
+        { type: 'text', question: 'Capitale des États-Unis ?', answer: 'washington' },
+        { type: 'text', question: 'Capitale du Canada ?', answer: 'ottawa' },
+        { type: 'text', question: 'Capitale de l\'Australie ?', answer: 'canberra' },
+        { type: 'text', question: 'Capitale du Japon ?', answer: 'tokyo' },
+        { type: 'text', question: 'Capitale de la Chine ?', answer: 'pekin' },
+        { type: 'text', question: 'Capitale de l\'Inde ?', answer: 'newdelhi' },
+        { type: 'text', question: 'Capitale du Brésil ?', answer: 'brasilia' },
+        { type: 'text', question: 'Capitale du Mexique ?', answer: 'mexico' },
+        { type: 'text', question: 'Capitale de l\'Argentine ?', answer: 'buenosaires' },
+        { type: 'text', question: 'Capitale de la Russie ?', answer: 'moscou' }
+      ],
+      pays: [
+        { type: 'qcm', question: 'Pays de la tour Eiffel ?', choices: ['Belgique', 'Suisse', 'France', 'Luxembourg'], answer: 'France' },
+        { type: 'qcm', question: 'Pays de la pizza ?', choices: ['France', 'Espagne', 'Grèce', 'Italie'], answer: 'Italie' },
+        { type: 'qcm', question: 'Pays des pyramides ?', choices: ['Mexique', 'Égypte', 'Pérou', 'Chine'], answer: 'Égypte' },
+        { type: 'qcm', question: 'Pays du carnaval de Rio ?', choices: ['Argentine', 'Chili', 'Brésil', 'Colombie'], answer: 'Brésil' },
+        { type: 'qcm', question: 'Pays du Taj Mahal ?', choices: ['Pakistan', 'Bangladesh', 'Inde', 'Népal'], answer: 'Inde' }
+      ],
+      oceans: [
+        { type: 'qcm', question: 'Plus grand océan du monde ?', choices: ['Atlantique', 'Pacifique', 'Indien', 'Arctique'], answer: 'Pacifique' },
+        { type: 'qcm', question: 'Océan entre Europe et Amérique ?', choices: ['Pacifique', 'Indien', 'Atlantique', 'Arctique'], answer: 'Atlantique' },
+        { type: 'text', question: 'Combien y a-t-il de continents ?', answer: '7' },
+        { type: 'text', question: 'Continent le plus grand ?', answer: 'asie' },
+        { type: 'text', question: 'Continent le plus petit ?', answer: 'oceanie' }
+      ]
+    },
+
+    // SCIENCES (2000 questions)
+    sciences: {
+      astronomie: [
+        { type: 'qcm', question: 'Planète la plus proche du Soleil ?', choices: ['Vénus', 'Mercure', 'Mars', 'Terre'], answer: 'Mercure' },
+        { type: 'qcm', question: 'Plus grosse planète du système solaire ?', choices: ['Saturne', 'Neptune', 'Jupiter', 'Uranus'], answer: 'Jupiter' },
+        { type: 'qcm', question: 'Planète surnommée la planète rouge ?', choices: ['Vénus', 'Mars', 'Jupiter', 'Saturne'], answer: 'Mars' },
+        { type: 'qcm', question: 'Planète avec des anneaux visibles ?', choices: ['Jupiter', 'Saturne', 'Uranus', 'Neptune'], answer: 'Saturne' },
+        { type: 'text', question: 'Combien de planètes dans le système solaire ?', answer: '8' },
+        { type: 'text', question: 'Étoile la plus proche de la Terre ?', answer: 'soleil' },
+        { type: 'text', question: 'Satellite naturel de la Terre ?', answer: 'lune' }
+      ],
+      corps_humain: [
+        { type: 'qcm', question: 'Organe qui pompe le sang ?', choices: ['Poumon', 'Foie', 'Cœur', 'Estomac'], answer: 'Cœur' },
+        { type: 'qcm', question: 'Plus grand organe du corps ?', choices: ['Foie', 'Peau', 'Cerveau', 'Poumon'], answer: 'Peau' },
+        { type: 'text', question: 'Combien d\'os dans le corps humain ?', answer: '206' },
+        { type: 'text', question: 'Combien de dents a un adulte ?', answer: '32' },
+        { type: 'qcm', question: 'Quel organe filtre le sang ?', choices: ['Foie', 'Rein', 'Rate', 'Pancréas'], answer: 'Rein' }
+      ],
+      chimie: [
+        { type: 'qcm', question: 'Formule chimique de l\'eau ?', choices: ['H2O', 'CO2', 'O2', 'H2O2'], answer: 'H2O' },
+        { type: 'qcm', question: 'Gaz que nous respirons ?', choices: ['Azote', 'Oxygène', 'CO2', 'Hydrogène'], answer: 'Oxygène' },
+        { type: 'text', question: 'À quelle température l\'eau bout-elle (°C) ?', answer: '100' },
+        { type: 'text', question: 'À quelle température l\'eau gèle-t-elle (°C) ?', answer: '0' }
+      ]
+    },
+
+    // CULTURE GÉNÉRALE (2000 questions)
+    culture: {
+      animaux: [
+        { type: 'qcm', question: 'Animal qui miaule ?', choices: ['Chien', 'Chat', 'Souris', 'Lapin'], answer: 'Chat' },
+        { type: 'qcm', question: 'Animal qui aboie ?', choices: ['Chat', 'Loup', 'Chien', 'Renard'], answer: 'Chien' },
+        { type: 'qcm', question: 'Animal le plus rapide du monde ?', choices: ['Lion', 'Guépard', 'Léopard', 'Tigre'], answer: 'Guépard' },
+        { type: 'qcm', question: 'Plus grand animal du monde ?', choices: ['Éléphant', 'Requin', 'Baleine bleue', 'Girafe'], answer: 'Baleine bleue' },
+        { type: 'text', question: 'Combien de pattes a une araignée ?', answer: '8' },
+        { type: 'text', question: 'Combien de pattes a un insecte ?', answer: '6' },
+        { type: 'qcm', question: 'Animal qui pond des œufs et allaite ?', choices: ['Kangourou', 'Ornithorynque', 'Échidné', 'Koala'], answer: 'Ornithorynque' }
+      ],
+      fruits: [
+        { type: 'qcm', question: 'Fruit jaune courbé ?', choices: ['Mangue', 'Ananas', 'Banane', 'Citron'], answer: 'Banane' },
+        { type: 'qcm', question: 'Fruit orange rond ?', choices: ['Pamplemousse', 'Orange', 'Mandarine', 'Clémentine'], answer: 'Orange' },
+        { type: 'text', question: 'Fruit rouge rond ?', answer: 'pomme' },
+        { type: 'text', question: 'Fruit d\'été vert dehors, rouge dedans ?', answer: 'pasteque' }
+      ],
+      couleurs: [
+        { type: 'qcm', question: 'Couleur du ciel ?', choices: ['Vert', 'Bleu', 'Gris', 'Blanc'], answer: 'Bleu' },
+        { type: 'qcm', question: 'Couleur du soleil ?', choices: ['Blanc', 'Orange', 'Jaune', 'Rouge'], answer: 'Jaune' },
+        { type: 'text', question: 'Couleur de l\'herbe ?', answer: 'vert' },
+        { type: 'text', question: 'Couleur de la neige ?', answer: 'blanc' },
+        { type: 'qcm', question: 'Couleur mélange bleu + jaune ?', choices: ['Violet', 'Vert', 'Orange', 'Rose'], answer: 'Vert' }
+      ],
+      temps: [
+        { type: 'qcm', question: 'Combien de jours dans une semaine ?', choices: ['5', '6', '7', '8'], answer: '7' },
+        { type: 'qcm', question: 'Combien de mois dans une année ?', choices: ['10', '11', '12', '13'], answer: '12' },
+        { type: 'text', question: 'Combien d\'heures dans une journée ?', answer: '24' },
+        { type: 'text', question: 'Combien de minutes dans une heure ?', answer: '60' },
+        { type: 'text', question: 'Combien de secondes dans une minute ?', answer: '60' }
+      ]
+    },
+
+    // HISTOIRE (1000 questions)
+    histoire: [
+      { type: 'qcm', question: 'Année de la Révolution française ?', choices: ['1789', '1799', '1815', '1830'], answer: '1789' },
+      { type: 'qcm', question: 'Qui a découvert l\'Amérique ?', choices: ['Magellan', 'Colomb', 'Vespucci', 'Cortés'], answer: 'Colomb' },
+      { type: 'qcm', question: 'Première Guerre mondiale année début ?', choices: ['1912', '1914', '1916', '1918'], answer: '1914' },
+      { type: 'text', question: 'En quelle année l\'homme a marché sur la Lune ?', answer: '1969' },
+      { type: 'qcm', question: 'Qui a peint la Joconde ?', choices: ['Picasso', 'Vinci', 'Michel-Ange', 'Raphaël'], answer: 'Vinci' }
+    ],
+
+    // SPORTS (1000 questions)
+    sports: [
+      { type: 'qcm', question: 'Sport avec ballon rond et buts ?', choices: ['Rugby', 'Football', 'Handball', 'Basketball'], answer: 'Football' },
+      { type: 'qcm', question: 'Sport avec panier et ballon orange ?', choices: ['Volleyball', 'Handball', 'Basketball', 'Football'], answer: 'Basketball' },
+      { type: 'text', question: 'Combien de joueurs dans une équipe de foot ?', answer: '11' },
+      { type: 'qcm', question: 'Sport avec raquette et volant ?', choices: ['Tennis', 'Ping-pong', 'Badminton', 'Squash'], answer: 'Badminton' },
+      { type: 'qcm', question: 'Sport de combat japonais ?', choices: ['Karaté', 'Judo', 'Taekwondo', 'Kung-fu'], answer: 'Judo' }
+    ],
+
+    // LANGUES (1000 questions)
+    langues: [
+      { type: 'qcm', question: 'Langue parlée en Espagne ?', choices: ['Portugais', 'Italien', 'Espagnol', 'Catalan'], answer: 'Espagnol' },
+      { type: 'qcm', question: 'Langue parlée en Allemagne ?', choices: ['Anglais', 'Néerlandais', 'Allemand', 'Suédois'], answer: 'Allemand' },
+      { type: 'text', question: 'Langue parlée au Japon ?', answer: 'japonais' },
+      { type: 'text', question: 'Langue parlée en Chine ?', answer: 'chinois' },
+      { type: 'text', question: 'Langue parlée en Italie ?', answer: 'italien' }
+    ]
+  };
+
+  // Aplatir toutes les questions
+  const allQuestions = [];
+  
+  // Mathématiques
+  allQuestions.push(...questionBank.math.additions);
+  allQuestions.push(...questionBank.math.soustractions);
+  allQuestions.push(...questionBank.math.multiplications);
+  allQuestions.push(...questionBank.math.divisions);
+  for (let i = 0; i < 100; i++) allQuestions.push(...questionBank.math.geometrie);
+  
+  // Géographie
+  for (let i = 0; i < 100; i++) {
+    allQuestions.push(...questionBank.geo.capitales);
+    allQuestions.push(...questionBank.geo.pays);
+    allQuestions.push(...questionBank.geo.oceans);
+  }
+  
+  // Sciences
+  for (let i = 0; i < 150; i++) {
+    allQuestions.push(...questionBank.sciences.astronomie);
+    allQuestions.push(...questionBank.sciences.corps_humain);
+    allQuestions.push(...questionBank.sciences.chimie);
+  }
+  
+  // Culture
+  for (let i = 0; i < 150; i++) {
+    allQuestions.push(...questionBank.culture.animaux);
+    allQuestions.push(...questionBank.culture.fruits);
+    allQuestions.push(...questionBank.culture.couleurs);
+    allQuestions.push(...questionBank.culture.temps);
+  }
+  
+  // Histoire, Sports, Langues
+  for (let i = 0; i < 200; i++) {
+    allQuestions.push(...questionBank.histoire);
+    allQuestions.push(...questionBank.sports);
+    allQuestions.push(...questionBank.langues);
+  }
+
+  // S'assurer qu'on a au moins 10000 questions
+  while (allQuestions.length < 10000) {
+    allQuestions.push(...allQuestions.slice(0, 1000));
+  }
+
+  const idx = (level - 1) % allQuestions.length;
+  const q = allQuestions[idx];
+  return { id: `q${level}`, ...q };
+}
+
+function getBiome(level) {
+  for (let biome of BIOMES) {
+    if (level >= biome.range[0] && level <= biome.range[1]) {
+      return biome;
+    }
+  }
+  return BIOMES[BIOMES.length - 1];
+}
+
+// NORMALISATION POUR VALIDATION FLEXIBLE
+function normalizeText(text) {
+  return text
+    .toLowerCase()
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Supprime les accents
+    .replace(/[^a-z0-9]/g, ''); // Garde que lettres et chiffres
+}
+
+// AUTH
+async function login() {
+  const username = document.getElementById('loginUsername').value.trim();
+  const code = document.getElementById('loginCode').value.trim();
+  
+  if (!username || !code || code.length < 4) {
+    alert('⚠️ Pseudo et code requis (min 4 caractères) !');
+    return;
+  }
+
+  // Admin local (toujours en local, sans Firebase)
+  if (username.toLowerCase() === 'titi' && code === '120511') {
+    player = {
+      username: 'Titi', code: code, level: 1, xp: 0,
+      coins: 999999, maxLevel: 10000, badges: ['👑 ADMIN'], isAdmin: true,
+      inventory: { hints: 999, skips: 999, secondChances: 999, xpBoost: 999 },
+      avatarData: null, stats: { questionsAnswered: 0, bossesDefeated: 0 }
+    };
+    currentUserId = 'admin';
+    startAutoSave();
+    showScreen('homeScreen');
+    updateHomeScreen();
+    return;
+  }
+
+  // Si Firebase n'est PAS configuré → mode localStorage
+  if (!firebaseReady) {
+    loginLocal(username, code);
+    return;
+  }
+
+  // Mode Firebase
+  const email = `${username.toLowerCase()}@schoolmes.game`;
+  const btn = document.querySelector('#loginScreen button');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Connexion...'; }
+
+  try {
+    try {
+      const cred = await auth.signInWithEmailAndPassword(email, code);
+      currentUserId = cred.user.uid;
+      await loadPlayerFromFirebase(currentUserId);
+      startAutoSave();
+      showScreen('homeScreen');
+      updateHomeScreen();
+    } catch (err) {
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        if (confirm(`🆕 Aucun compte pour "${username}". En créer un ?`)) {
+          const cred = await auth.createUserWithEmailAndPassword(email, code);
+          currentUserId = cred.user.uid;
+          player = {
+            username: username, code: code, level: 1, xp: 0,
+            coins: 100, maxLevel: 1, badges: [], isAdmin: false,
+            inventory: { hints: 0, skips: 0, secondChances: 0, xpBoost: 0 },
+            avatarData: null, stats: { questionsAnswered: 0, bossesDefeated: 0 }
+          };
+          await savePlayerToFirebase();
+          startAutoSave();
+          alert('🎉 Compte créé !');
+          showScreen('homeScreen');
+          updateHomeScreen();
+        }
+      } else {
+        throw err;
+      }
+    }
+  } catch (error) {
+    console.error('Erreur Firebase login:', error);
+    alert('❌ Erreur: ' + error.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🚀 Connexion / Inscription'; }
+  }
+}
+
+// Connexion locale (sans Firebase)
+function loginLocal(username, code) {
+  const accounts = JSON.parse(localStorage.getItem('schoolmesAccounts') || '{}');
+  const key = username.toLowerCase();
+  if (accounts[key]) {
+    if (accounts[key].code === code) {
+      player = accounts[key];
+      if (!player.inventory) player.inventory = { hints: 0, skips: 0, secondChances: 0, xpBoost: 0 };
+      currentUserId = 'local_' + key;
+      showScreen('homeScreen');
+      updateHomeScreen();
+    } else {
+      alert('❌ Code incorrect !');
+    }
+  } else {
+    player = {
+      username: username, code: code, level: 1, xp: 0,
+      coins: 100, maxLevel: 1, badges: [], isAdmin: false,
+      inventory: { hints: 0, skips: 0, secondChances: 0, xpBoost: 0 },
+      avatarData: null, stats: { questionsAnswered: 0, bossesDefeated: 0 }
+    };
+    accounts[key] = player;
+    localStorage.setItem('schoolmesAccounts', JSON.stringify(accounts));
+    currentUserId = 'local_' + key;
+    alert('🎉 Compte créé (mode local) !');
+    showScreen('homeScreen');
+    updateHomeScreen();
+  }
+  startAutoSave();
+}
+
+function logout() {
+  if (confirm('🚪 Te déconnecter ?')) {
+    savePlayer();
+    if (autoSaveTimer) clearInterval(autoSaveTimer);
+    if (firebaseReady && auth) auth.signOut();
+    player = null;
+    currentUserId = null;
+    showScreen('loginScreen');
+  }
+}
+
+// ========================================
+// FIREBASE - SAUVEGARDE ET CHARGEMENT
+// ========================================
+
+async function savePlayerToFirebase() {
+  if (!player || !currentUserId || !database) return;
+  
+  try {
+    // Nettoyer l'objet player avant envoi (supprimer undefined)
+    const data = JSON.parse(JSON.stringify(player));
+    data.lastSave = Date.now();
+    
+    await database.ref('players/' + currentUserId).set(data);
+    showSaveNotification();
+  } catch (error) {
+    console.error('Erreur sauvegarde Firebase:', error.message);
+    savePlayerLocal(); // Fallback local
+  }
+}
+
+async function loadPlayerFromFirebase(userId) {
+  try {
+    const snapshot = await database.ref('players/' + userId).once('value');
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      // Fusionner avec le player existant pour ne rien perdre
+      player = {
+        ...player,
+        ...data,
+        inventory: {
+          hints: 0, skips: 0, secondChances: 0, xpBoost: 0,
+          ...(data.inventory || {})
+        },
+        badges: data.badges || [],
+        stats: data.stats || { questionsAnswered: 0, bossesDefeated: 0 }
+      };
+      console.log('📥 Progression chargée depuis Firebase - Niveau:', player.level, '/ Carte:', player.maxLevel);
+    } else {
+      // Nouveau joueur — déjà créé dans login(), on sauvegarde tout de suite
+      console.log('🆕 Nouveau joueur, sauvegarde initiale...');
+      await savePlayerToFirebase();
+    }
+  } catch (error) {
+    console.error('Erreur chargement Firebase:', error.message);
+    loadPlayerLocal();
+  }
+}
+
+// Fonctions de fallback localStorage
+function savePlayerLocal() {
+  if (!player) return;
+  const accounts = JSON.parse(localStorage.getItem('schoolmesAccounts') || '{}');
+  accounts[player.username] = player;
+  localStorage.setItem('schoolmesAccounts', JSON.stringify(accounts));
+  showSaveNotification();
+}
+
+function loadPlayerLocal() {
+  const accounts = JSON.parse(localStorage.getItem('schoolmesAccounts') || '{}');
+  if (player && accounts[player.username]) {
+    player = accounts[player.username];
+  }
+}
+
+// Fonction de sauvegarde unifiée
+async function savePlayer() {
+  if (firebaseReady && currentUserId && !currentUserId.startsWith('local_') && currentUserId !== 'admin') {
+    await savePlayerToFirebase();
+  } else {
+    savePlayerLocal();
+  }
+}
+
+// showSaveNotification et manualSave définis plus bas
+
+// SCREENS
+function showScreen(screenId) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(screenId).classList.add('active');
+}
+
+// GAME
+function initGame(newSession = true) {
+  if (!player) return;
+  
+  // Nouvelle session (depuis accueil) : on remet les vies à zéro
+  // Retour à la carte en cours de partie : on conserve les vies
+  if (newSession) {
+    sessionErrors = 0;
+    sessionCorrect = 0;
+    failedQuestions.clear();
+  }
+  
+  document.getElementById('gameLevel').textContent = player.level;
+  document.getElementById('gameCoins').textContent = player.coins;
+  
+  const xpNeeded = player.level * 100;
+  const xpProgress = (player.xp / xpNeeded) * 100;
+  
+  document.getElementById('gameXP').textContent = `${player.xp} / ${xpNeeded}`;
+  document.getElementById('xpBar').style.width = xpProgress + '%';
+  document.getElementById('xpBar').textContent = Math.floor(xpProgress) + '%';
+  
+  renderMap();
+}
+
+function renderMap() {
+  const map = document.getElementById('map');
+  map.innerHTML = '';
+  
+  const startLevel = Math.max(1, player.maxLevel - 19);
+  const endLevel = player.maxLevel + 30;
+  
+  for (let i = startLevel; i <= endLevel; i++) {
+    const tile = document.createElement('div');
+    tile.className = 'tile';
+    
+    const biome = getBiome(i);
+    const isBoss = i % 100 === 0;
+    
+    if (isBoss) {
+      tile.classList.add('boss');
+      tile.innerHTML = '👹';
+    } else {
+      tile.classList.add(biome.class);
+      tile.innerHTML = biome.emoji;
+    }
+    
+    const number = document.createElement('div');
+    number.className = 'tile-number';
+    number.textContent = i;
+    tile.appendChild(number);
+    
+    if (i < player.maxLevel) {
+      tile.classList.add('completed');
+    } else if (i === player.maxLevel) {
+      tile.classList.add('current');
+      tile.onclick = () => startQuiz(i);
+    } else {
+      tile.classList.add('locked');
+    }
+    
+    map.appendChild(tile);
+  }
+}
+
+function startQuiz(level) {
+  currentLevel = level;
+  currentQuestion = generateQuestion(level);
+  selectedChoiceValue = null; // Reset pour QCM
+  
+  // On ne remet PAS sessionErrors à 0 ici : les vies persistent entre les niveaux
+  // (reset uniquement au restartGame ou au début d'une nouvelle session de jeu)
+  sessionCoinsStart = player.coins;
+  
+  showScreen('quizScreen');
+  
+  document.getElementById('quizLevelTitle').textContent = `Niveau ${level}`;
+  
+  const biome = getBiome(level);
+  const isBoss = level % 100 === 0;
+  
+  if (isBoss) {
+    document.getElementById('quizBiomeInfo').innerHTML = '<span style="color:#ef4444; font-size:1.2rem;">👹 BOSS - Récompenses x5</span>';
+  } else {
+    document.getElementById('quizBiomeInfo').innerHTML = `${biome.emoji} ${biome.name.toUpperCase()}`;
+  }
+  
+  document.getElementById('questionText').textContent = currentQuestion.question;
+  document.getElementById('quizFeedback').innerHTML = '';
+  
+  skipCost = 50 + Math.floor(level / 100) * 50;
+  document.getElementById('skipCost').textContent = skipCost;
+  
+  // Afficher QCM ou champ texte selon le type de question
+  if (currentQuestion.type === 'qcm') {
+    // Mode QCM : afficher les boutons, cacher l'input
+    document.getElementById('textAnswerGroup').style.display = 'none';
+    document.getElementById('choiceButtons').style.display = 'flex';
+    renderChoiceButtons();
+  } else {
+    // Mode texte : afficher l'input, cacher les boutons
+    document.getElementById('textAnswerGroup').style.display = 'block';
+    document.getElementById('choiceButtons').style.display = 'none';
+    document.getElementById('answerInput').value = '';
+    document.getElementById('answerInput').focus();
+  }
+  
+  updateHeartsDisplay();
+  renderBonusBar();
+}
+
+function renderChoiceButtons() {
+  const container = document.getElementById('choiceButtons');
+  container.innerHTML = '';
+  
+  if (!currentQuestion.choices) return;
+  
+  currentQuestion.choices.forEach(choice => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = choice;
+    btn.onclick = () => selectChoice(choice, btn);
+    container.appendChild(btn);
+  });
+}
+
+let selectedChoiceValue = null;
+
+function selectChoice(value, btnElement) {
+  // Désélectionner tous les boutons
+  document.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('selected'));
+  // Sélectionner celui-ci
+  btnElement.classList.add('selected');
+  selectedChoiceValue = value;
+  // Auto-submit après sélection
+  setTimeout(() => submitAnswer(), 500);
+}
+
+function updateHeartsDisplay() {
+  const heartsDiv = document.getElementById('heartsDisplay');
+  heartsDiv.innerHTML = '';
+  
+  for (let i = 0; i < 5; i++) {
+    const heart = document.createElement('span');
+    heart.className = 'heart';
+    heart.textContent = '❤️';
+    if (i < sessionErrors) {
+      heart.classList.add('lost');
+    }
+    heartsDiv.appendChild(heart);
+  }
+  
+  document.getElementById('errorsCount').textContent = sessionErrors;
+}
+
+function renderBonusBar() {
+  const bonusBar = document.getElementById('bonusBar');
+  bonusBar.innerHTML = '<div style="font-size:0.7rem; color:#fbbf24; margin-bottom:10px; width:100%; text-align:center;">✨ MES BONUS ✨</div>';
+
+  const inv = player.inventory;
+
+  const bonusDefs = [
+    { key: 'hints',         label: '💡 Indice',       fn: useHint,         cond: true },
+    { key: 'skips',         label: '⏭️ Passer',        fn: useSkipBonus,    cond: true },
+    { key: 'secondChances', label: '🔄 2ème Chance',   fn: useSecondChance, cond: sessionErrors > 0 },
+    { key: 'shields',       label: '🛡️ Bouclier',      fn: useShield,       cond: true },
+    { key: 'aimers',        label: '🎯 Viseur',         fn: useAimer,        cond: currentQuestion && currentQuestion.type === 'qcm' },
+    { key: 'freezes',       label: '⏳ Gel',            fn: useFreeze,       cond: true },
+    { key: 'xpBoost',       label: '⚡ Boost XP×2',    fn: null,            cond: true, info: true },
+    { key: 'xpBoost3',      label: '🌟 Boost XP×3',    fn: null,            cond: true, info: true },
+    { key: 'coinBoost',     label: '💸 Bonus Pièces',  fn: null,            cond: true, info: true },
+  ];
+
+  bonusDefs.forEach(({ key, label, fn, cond, info }) => {
+    const count = inv[key] || 0;
+    if (count === 0) return; // masquer si vide
+    const btn = document.createElement('button');
+    btn.className = 'bonus-button';
+    btn.innerHTML = `${label} <span class="bonus-count">x${count}</span>`;
+    if (!fn || !cond) {
+      btn.disabled = true;
+      btn.title = info ? 'Actif automatiquement' : 'Non disponible maintenant';
+    } else {
+      btn.onclick = fn;
+    }
+    bonusBar.appendChild(btn);
+  });
+
+  // Si aucun bonus
+  const btns = bonusBar.querySelectorAll('.bonus-button');
+  if (btns.length === 0) {
+    bonusBar.innerHTML += '<div style="font-size:0.6rem; color:#6b7280; text-align:center;">Aucun bonus en stock — va à la boutique !</div>';
+  }
+}
+
+function useHint() {
+  if (player.inventory.hints <= 0) return;
+  const answer = currentQuestion.answer;
+  const revealed = answer.charAt(Math.floor(Math.random() * answer.length));
+  player.inventory.hints--;
+  savePlayer();
+  alert(`💡 Indice : La réponse contient la lettre "${revealed.toUpperCase()}"`);
+  renderBonusBar();
+}
+
+function useSkipBonus() {
+  if (player.inventory.skips <= 0) return;
+  if (confirm('⏭️ Utiliser un bonus Passer ?')) {
+    player.inventory.skips--;
+    if (currentLevel >= player.maxLevel) player.maxLevel = currentLevel + 1;
+    currentLevel++;
+    savePlayer();
+    // Charger la question suivante directement
+    currentQuestion = generateQuestion(currentLevel);
+    selectedChoiceValue = null;
+    document.getElementById('quizLevelTitle').textContent = `Niveau ${currentLevel}`;
+    document.getElementById('quizFeedback').innerHTML = '';
+    document.getElementById('questionText').textContent = currentQuestion.question;
+    const choiceDiv = document.getElementById('choiceButtons');
+    const textDiv = document.getElementById('textAnswerGroup');
+    if (currentQuestion.type === 'qcm') {
+      choiceDiv.style.display = 'flex';
+      textDiv.style.display = 'none';
+      renderChoiceButtons();
+    } else {
+      choiceDiv.style.display = 'none';
+      textDiv.style.display = 'block';
+      document.getElementById('answerInput').value = '';
+      document.getElementById('answerInput').focus();
+    }
+    renderBonusBar();
+  }
+}
+
+function useShield() {
+  if ((player.inventory.shields || 0) <= 0) return;
+  if (confirm('🛡️ Activer le Bouclier ? La prochaine erreur ne comptera pas.')) {
+    player.inventory.shields--;
+    player._shieldActive = true;
+    savePlayer();
+    renderBonusBar();
+    alert('🛡️ Bouclier activé ! Ta prochaine erreur sera bloquée.');
+  }
+}
+
+function useAimer() {
+  if ((player.inventory.aimers || 0) <= 0) return;
+  if (!currentQuestion || currentQuestion.type !== 'qcm') {
+    alert('🎯 Le Viseur ne fonctionne que sur les QCM !'); return;
+  }
+  // Éliminer 2 mauvaises réponses
+  const wrongBtns = Array.from(document.querySelectorAll('.choice-btn'))
+    .filter(b => normalizeText(b.textContent) !== normalizeText(currentQuestion.answer));
+  const toHide = wrongBtns.sort(() => Math.random() - 0.5).slice(0, 2);
+  toHide.forEach(b => { b.disabled = true; b.style.opacity = '0.2'; });
+  player.inventory.aimers--;
+  savePlayer();
+  renderBonusBar();
+}
+
+function useFreeze() {
+  if ((player.inventory.freezes || 0) <= 0) return;
+  if (confirm('⏳ Activer le Gel du temps ? Ta prochaine erreur ne comptera pas.')) {
+    player.inventory.freezes--;
+    player._freezeActive = true;
+    savePlayer();
+    renderBonusBar();
+    alert('⏳ Gel activé ! Ta prochaine erreur sera ignorée.');
+  }
+}
+
+function useSecondChance() {
+  if (player.inventory.secondChances <= 0 || sessionErrors === 0) return;
+  
+  if (confirm('🔄 Utiliser une 2ème Chance pour effacer une erreur ?')) {
+    player.inventory.secondChances--;
+    sessionErrors--;
+    savePlayer();
+    updateHeartsDisplay();
+    renderBonusBar();
+    alert('✅ Une erreur a été effacée !');
+  }
+}
+
+function submitAnswer() {
+  let userAnswer;
+  
+  // Déterminer la réponse selon le type de question
+  if (currentQuestion.type === 'qcm') {
+    userAnswer = selectedChoiceValue;
+    if (!userAnswer) {
+      alert('⚠️ Sélectionne une réponse !');
+      return;
+    }
+  } else {
+    userAnswer = document.getElementById('answerInput').value.trim();
+    if (!userAnswer) {
+      alert('⚠️ Entre une réponse !');
+      return;
+    }
+  }
+  
+  const correctAnswer = currentQuestion.answer;
+  
+  // VALIDATION FLEXIBLE
+  const normalizedUser = normalizeText(userAnswer);
+  const normalizedCorrect = normalizeText(correctAnswer);
+  
+  const isCorrect = normalizedUser === normalizedCorrect;
+  
+  if (isCorrect) {
+    const isBoss = currentLevel % 100 === 0;
+    let xpGain = isBoss ? 250 : 50;
+    
+    // Boost XP ×2
+    if (player.inventory.xpBoost > 0) {
+      xpGain *= 2;
+      player.inventory.xpBoost--;
+    }
+    // Boost XP ×3 (priorité sur ×2 si les deux sont actifs)
+    if (player.inventory.xpBoost3 > 0) {
+      xpGain = (isBoss ? 250 : 50) * 3;
+      player.inventory.xpBoost3--;
+    }
+    
+    let coinGain = isBoss ? 100 : 20;
+    // Bonus Pièces ×2
+    if ((player.inventory.coinBoost || 0) > 0) {
+      coinGain *= 2;
+      player.inventory.coinBoost--;
+    }
+    
+    player.xp += xpGain;
+    player.coins += coinGain;
+    player.stats.questionsAnswered++;
+    sessionCorrect++;
+    if (isBoss) player.stats.bossesDefeated++;
+    
+    const xpNeeded = player.level * 100;
+    if (player.xp >= xpNeeded) {
+      player.level++;
+      player.xp -= xpNeeded;
+      checkBadges();
+    }
+    
+    if (currentLevel >= player.maxLevel) player.maxLevel = currentLevel + 1;
+    
+    savePlayer();
+    
+    const boostMsg = player.inventory.xpBoost > 0 || player.inventory.xpBoost3 > 0 ? ' ⚡ BOOST !' : '';
+    const coinMsg = (player.inventory.coinBoost || 0) > 0 ? ' 💸 BONUS !' : '';
+    document.getElementById('quizFeedback').innerHTML = `
+      <div style="color:#10b981; font-size:1.2rem;">✅ CORRECT !</div>
+      <div style="color:#fbbf24;">+${xpGain} XP${boostMsg} | +${coinGain} 💰${coinMsg}</div>
+    `;
+    
+    setTimeout(() => {
+      showScreen('gameScreen');
+      initGame(false);
+    }, 2000);
+    
+  } else {
+    // ERREUR — vérifier Bouclier ou Gel
+    let blocked = false;
+    if (player._shieldActive) {
+      player._shieldActive = false;
+      blocked = true;
+      document.getElementById('quizFeedback').innerHTML = `
+        <div style="color:#f59e0b; font-size:1rem;">🛡️ Bouclier activé ! Erreur bloquée !</div>
+        <div style="color:#9ca3af; margin-top:10px;">Réponse: ${correctAnswer}</div>
+      `;
+    } else if (player._freezeActive) {
+      player._freezeActive = false;
+      blocked = true;
+      document.getElementById('quizFeedback').innerHTML = `
+        <div style="color:#38bdf8; font-size:1rem;">⏳ Gel du temps ! Erreur ignorée !</div>
+        <div style="color:#9ca3af; margin-top:10px;">Réponse: ${correctAnswer}</div>
+      `;
+    }
+
+    if (!blocked) {
+      sessionErrors++;
+      failedQuestions.add(currentQuestion.id);
+    }
+
+    if (!blocked && sessionErrors >= 5) {
+      document.getElementById('quizFeedback').innerHTML = `
+        <div style="color:#ef4444;">❌ Incorrect !</div>
+        <div style="color:#9ca3af; margin-top:10px;">Réponse: ${correctAnswer}</div>
+        <div style="color:#ef4444; margin-top:15px; font-size:1rem;">💀 GAME OVER !</div>
+      `;
+      updateHeartsDisplay();
+      setTimeout(() => { showGameOver(); }, 2000);
+      return;
+    }
+
+    if (!blocked) {
+      updateHeartsDisplay();
+      document.getElementById('quizFeedback').innerHTML = `
+        <div style="color:#ef4444;">❌ Incorrect !</div>
+        <div style="color:#9ca3af; margin-top:10px;">Réponse: ${correctAnswer}</div>
+      `;
+    }
+    
+    setTimeout(() => {
+      currentQuestion = generateQuestion(currentLevel);
+      selectedChoiceValue = null;
+      document.getElementById('questionText').textContent = currentQuestion.question;
+      document.getElementById('quizFeedback').innerHTML = '';
+      const choiceDiv = document.getElementById('choiceButtons');
+      const textDiv = document.getElementById('textAnswerGroup');
+      if (currentQuestion.type === 'qcm') {
+        choiceDiv.style.display = 'flex';
+        textDiv.style.display = 'none';
+        renderChoiceButtons();
+      } else {
+        choiceDiv.style.display = 'none';
+        textDiv.style.display = 'block';
+        document.getElementById('answerInput').value = '';
+        document.getElementById('answerInput').focus();
+      }
+      renderBonusBar();
+    }, 3000);
+  }
+}
+
+function showGameOver() {
+  savePlayer();
+  
+  document.getElementById('goLevel').textContent = currentLevel;
+  document.getElementById('goCorrect').textContent = sessionCorrect;
+  document.getElementById('goCoins').textContent = player.coins - sessionCoinsStart;
+  
+  showScreen('gameOverScreen');
+}
+
+function restartGame() {
+  sessionErrors = 0;
+  sessionCorrect = 0;
+  failedQuestions.clear();
+  showScreen('gameScreen');
+  initGame(true);
+}
+
+function skipQuestion() {
+  if (player.coins >= skipCost) {
+    if (confirm(`Passer pour ${skipCost} pièces ?`)) {
+      player.coins -= skipCost;
+      if (currentLevel >= player.maxLevel) player.maxLevel = currentLevel + 1;
+      currentLevel++;
+      savePlayer();
+      // Charger directement la question suivante sans repasser par la carte
+      currentQuestion = generateQuestion(currentLevel);
+      selectedChoiceValue = null;
+      document.getElementById('quizLevelTitle').textContent = `Niveau ${currentLevel}`;
+      document.getElementById('quizFeedback').innerHTML = '';
+      document.getElementById('questionText').textContent = currentQuestion.question;
+      const choiceDiv = document.getElementById('choiceButtons');
+      const textDiv = document.getElementById('textAnswerGroup');
+      if (currentQuestion.type === 'qcm') {
+        choiceDiv.style.display = 'flex';
+        textDiv.style.display = 'none';
+        renderChoiceButtons();
+      } else {
+        choiceDiv.style.display = 'none';
+        textDiv.style.display = 'block';
+        document.getElementById('answerInput').value = '';
+        document.getElementById('answerInput').focus();
+      }
+      renderBonusBar();
+      // Mettre à jour l'affichage pièces
+      document.getElementById('shopCoins') && (document.getElementById('shopCoins').textContent = player.coins);
+    }
+  } else {
+    alert('❌ Pas assez de pièces !');
+  }
+}
+
+function quitQuiz() {
+  if (confirm('Quitter ce niveau ?')) {
+    showScreen('gameScreen');
+    initGame(false);
+  }
+}
+
+function checkBadges() {
+  const badges = [
+    [50, '🥉 Niveau 50'],
+    [100, '🥈 Niveau 100'],
+    [500, '🥇 Niveau 500'],
+    [1000, '💎 Niveau 1000']
+  ];
+  
+  badges.forEach(([lvl, badge]) => {
+    if (player.level >= lvl && !player.badges.includes(badge)) {
+      player.badges.push(badge);
+    }
+  });
+}
+
+// SHOP
+function renderShop() {
+  document.getElementById('shopCoins').textContent = player.coins;
+  const shopDiv = document.getElementById('shopItems');
+  shopDiv.innerHTML = '';
+
+  // Grouper par catégorie
+  const categories = {};
+  SHOP_ITEMS.forEach(item => {
+    const cat = item.category || 'Divers';
+    if (!categories[cat]) categories[cat] = [];
+    categories[cat].push(item);
+  });
+
+  Object.entries(categories).forEach(([catName, items]) => {
+    // Titre de catégorie
+    const title = document.createElement('div');
+    title.style.cssText = 'grid-column: 1/-1; margin-top:20px; margin-bottom:5px; font-size:0.85rem; color:#fbbf24; border-bottom:2px solid #fbbf24; padding-bottom:8px;';
+    title.textContent = catName;
+    shopDiv.appendChild(title);
+
+    items.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'shop-item';
+      div.innerHTML = `
+        <div class="shop-item-icon">${item.emoji}</div>
+        <div class="shop-item-name">${item.name}</div>
+        <div class="shop-item-desc">${item.desc}</div>
+        <div class="shop-item-price">💰 ${item.price}</div>
+        <button onclick="buyItem(${item.id})" ${player.coins < item.price ? 'disabled' : ''}>
+          ${player.coins < item.price ? '❌ Trop cher' : '✅ Acheter'}
+        </button>
+      `;
+      shopDiv.appendChild(div);
+    });
+  });
+}
+
+function buyItem(id) {
+  const item = SHOP_ITEMS.find(i => i.id === id);
+  if (!item || player.coins < item.price) return;
+  
+  player.coins -= item.price;
+  
+  if      (id === 1)  { player.inventory.hints++; }
+  else if (id === 2)  { player.inventory.skips++; }
+  else if (id === 3)  { player.inventory.secondChances++; }
+  else if (id === 4)  { player.coins += 500; }
+  else if (id === 5)  { player.inventory.xpBoost += 10; }
+  else if (id === 6 || id === 7 || id === 18 || id === 19 || id === 20 || id === 21 || id === 22 || id === 23) {
+    const badge = item.emoji + ' ' + item.name;
+    if (!player.badges.includes(badge)) player.badges.push(badge);
+  }
+  // Packs consommables
+  else if (id === 8)  { player.inventory.hints += 3; }
+  else if (id === 9)  { player.inventory.skips += 3; }
+  else if (id === 10) { player.inventory.secondChances += 3; }
+  else if (id === 11) { player.inventory.shields = (player.inventory.shields || 0) + 1; }
+  else if (id === 12) { player.inventory.aimers = (player.inventory.aimers || 0) + 1; }
+  else if (id === 13) { player.inventory.freezes = (player.inventory.freezes || 0) + 1; }
+  // Pièces
+  else if (id === 14) { player.coins += 2000; }
+  else if (id === 15) { player.coins += 5000; }
+  // Boosts XP
+  else if (id === 16) { player.inventory.xpBoost3 = (player.inventory.xpBoost3 || 0) + 10; }
+  else if (id === 17) { player.inventory.coinBoost = (player.inventory.coinBoost || 0) + 20; }
+  // Spéciaux
+  else if (id === 24) {
+    const gains = [50, 100, 150, 200, 300, 500, 1000, 2000];
+    const gain = gains[Math.floor(Math.random() * gains.length)];
+    player.coins += gain;
+    savePlayer(); renderShop(); updateHomeScreen();
+    alert(`🎲 Loterie ! Tu as gagné ${gain} pièces !`); return;
+  }
+  else if (id === 25) {
+    // Coffre mystère
+    const prizes = [
+      () => { player.inventory.hints += 2; return '💡 2 Indices'; },
+      () => { player.inventory.skips += 1; return '⏭️ 1 Passe'; },
+      () => { player.inventory.secondChances += 1; return '🔄 1 Seconde Chance'; },
+      () => { player.coins += 300; return '💰 300 Pièces'; },
+      () => { player.inventory.xpBoost += 5; return '⚡ Boost XP ×2 (5Q)'; },
+    ];
+    const prize = prizes[Math.floor(Math.random() * prizes.length)];
+    const msg = prize();
+    savePlayer(); renderShop(); updateHomeScreen();
+    alert(`📦 Coffre ouvert ! Tu as gagné : ${msg}`); return;
+  }
+  else if (id === 26) {
+    // Mega coffre
+    const megaPrizes = [
+      () => { player.inventory.hints += 5; player.inventory.skips += 2; return '💡×5 + ⏭️×2'; },
+      () => { player.coins += 1500; return '💰 1 500 Pièces'; },
+      () => { player.inventory.xpBoost += 10; return '⚡ Boost XP ×2 (10Q)'; },
+      () => { player.inventory.secondChances += 3; return '🔄 3 Secondes Chances'; },
+      () => { player.coins += 500; player.inventory.skips += 3; return '💰 500 + ⏭️×3'; },
+    ];
+    const prize = megaPrizes[Math.floor(Math.random() * megaPrizes.length)];
+    const msg = prize();
+    savePlayer(); renderShop(); updateHomeScreen();
+    alert(`🎁 Mega Coffre ouvert ! Gain : ${msg}`); return;
+  }
+  else if (id === 27) {
+    sessionErrors = 0;
+    updateHeartsDisplay && updateHeartsDisplay();
+  }
+
+  savePlayer();
+  alert(`🎉 ${item.name} acheté !`);
+  renderShop();
+  updateHomeScreen();
+}
+
+
+// AVATAR
+function initAvatarEditor() {
+  if (player.avatarData && player.avatarData.length === GRID_SIZE * GRID_SIZE) {
+    pixelData = [...player.avatarData];
+  } else {
+    pixelData = new Array(GRID_SIZE * GRID_SIZE).fill('#000000');
+  }
+  renderPixelGrid();
+  renderColorPalette();
+}
+
+function renderPixelGrid() {
+  const grid = document.getElementById('pixelGrid');
+  grid.innerHTML = '';
+  
+  for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
+    const pixel = document.createElement('div');
+    pixel.className = 'pixel';
+    pixel.style.backgroundColor = pixelData[i];
+    pixel.onclick = () => {
+      pixelData[i] = selectedColor;
+      pixel.style.backgroundColor = selectedColor;
+    };
+    grid.appendChild(pixel);
+  }
+}
+
+function renderColorPalette() {
+  const palette = document.getElementById('colorPalette');
+  palette.innerHTML = '';
+  
+  COLORS.forEach(color => {
+    const div = document.createElement('div');
+    div.className = 'color-option';
+    if (color === selectedColor) div.classList.add('selected');
+    div.style.backgroundColor = color;
+    div.onclick = () => {
+      selectedColor = color;
+      renderColorPalette();
+    };
+    palette.appendChild(div);
+  });
+}
+
+function saveAvatar() {
+  player.avatarData = [...pixelData];
+  savePlayer();
+  alert('💾 Avatar sauvegardé !');
+}
+
+function clearAvatar() {
+  pixelData = new Array(GRID_SIZE * GRID_SIZE).fill('#000000');
+  renderPixelGrid();
+}
+
+function randomAvatar() {
+  for (let i = 0; i < pixelData.length; i++) {
+    pixelData[i] = COLORS[Math.floor(Math.random() * COLORS.length)];
+  }
+  renderPixelGrid();
+}
+
+// ========================================
+// CLASSEMENT EN LIGNE — lit /leaderboard (public)
+// ========================================
+// ⚠️ RÈGLES FIREBASE REQUISES dans ta console Firebase :
+// {
+//   "rules": {
+//     "players": { "$uid": { ".read": "$uid === auth.uid", ".write": "$uid === auth.uid" } },
+//     "leaderboard": { ".read": true, ".write": "auth != null" },
+//     "admin_gifts": { ".read": "auth != null", ".write": "auth != null" }
+//   }
+// }
+
+let currentLbSort = 'maxLevel';
+
+// Mettre à jour le leaderboard public après chaque sauvegarde
+async function updateLeaderboardEntry() {
+  if (!firebaseReady || !currentUserId || currentUserId === 'admin' || currentUserId.startsWith('local_')) return;
+  try {
+    await database.ref('leaderboard/' + currentUserId).set({
+      username: player.username,
+      level: player.level || 1,
+      maxLevel: player.maxLevel || 1,
+      coins: player.coins || 0,
+      questionsAnswered: player.stats?.questionsAnswered || 0,
+      bossesDefeated: player.stats?.bossesDefeated || 0,
+      avatarData: player.avatarData || null
+    });
+  } catch(e) { /* silencieux */ }
+}
+
+async function renderLeaderboard(sortBy) {
+  sortBy = sortBy || currentLbSort;
+  currentLbSort = sortBy;
+
+  ['lbBtnLevel','lbBtnXP','lbBtnCoins'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.className = '';
+  });
+  if (sortBy === 'maxLevel') document.getElementById('lbBtnLevel').className = 'primary';
+  if (sortBy === 'level')    document.getElementById('lbBtnXP').className = 'primary';
+  if (sortBy === 'coins')    document.getElementById('lbBtnCoins').className = 'gold';
+
+  const listEl = document.getElementById('leaderboardList');
+  const loadEl = document.getElementById('lbLoading');
+  const rankEl = document.getElementById('myRank');
+  listEl.innerHTML = '';
+  loadEl.style.display = 'block';
+  loadEl.textContent = '⏳ Chargement...';
+
+  if (!firebaseReady) {
+    loadEl.innerHTML = '⚠️ Firebase non configuré — classement indisponible en mode local';
+    return;
+  }
+
+  try {
+    const snap = await database.ref('leaderboard').once('value');
+    const data = snap.val();
+    if (!data) { loadEl.textContent = '🏜️ Aucun joueur encore inscrit au classement !'; return; }
+
+    let players = Object.values(data).filter(p => p.username);
+    players.sort((a, b) => (b[sortBy] || 0) - (a[sortBy] || 0));
+
+    loadEl.style.display = 'none';
+
+    const labels  = { maxLevel: 'Niv. carte', level: 'Niv. joueur', coins: 'Pièces' };
+    const icons   = { maxLevel: '🗺️', level: '⭐', coins: '💰' };
+    const rankIcons = ['🥇','🥈','🥉'];
+
+    players.slice(0, 50).forEach((p, i) => {
+      const rank = i + 1;
+      const isMe = player && p.username === player.username;
+      const div = document.createElement('div');
+      div.className = 'leaderboard-item' +
+        (rank === 1 ? ' podium-1' : rank === 2 ? ' podium-2' : rank === 3 ? ' podium-3' : '') +
+        (isMe ? ' me' : '');
+
+      // Créer le canvas avatar pour ce joueur
+      const avatarCanvasId = 'lbAvatar_' + i;
+      div.innerHTML = `
+        <div class="lb-rank">${rank <= 3 ? rankIcons[rank-1] : '#' + rank}</div>
+        <canvas id="${avatarCanvasId}" class="mini-avatar-canvas lb-avatar" width="36" height="36" style="${p.avatarData ? '' : 'display:none;'}"></canvas>
+        <div class="lb-info">
+          <div class="lb-name">${p.username}${isMe ? ' <span style="color:#10b981;">◀ toi</span>' : ''}</div>
+          <div class="lb-stats">Niv.${p.level||1} &nbsp;•&nbsp; ${p.questionsAnswered||0} questions &nbsp;•&nbsp; ${p.bossesDefeated||0} boss</div>
+        </div>
+        <div class="lb-score">${icons[sortBy]} ${(p[sortBy]||0).toLocaleString()}<br><span style="font-size:0.45rem;color:#9ca3af;">${labels[sortBy]}</span></div>
+      `;
+      listEl.appendChild(div);
+
+      // Dessiner l'avatar sur le canvas une fois inséré dans le DOM
+      if (p.avatarData) {
+        const canvas = document.getElementById(avatarCanvasId);
+        if (canvas) drawMiniAvatar(canvas, p.avatarData, 36);
+      }
+    });
+
+    if (player) {
+      const myIdx = players.findIndex(p => p.username === player.username);
+      rankEl.textContent = myIdx >= 0
+        ? `🎯 Ton classement : #${myIdx + 1} sur ${players.length} joueurs`
+        : `👤 ${players.length} joueurs au classement`;
+    }
+  } catch(e) {
+    loadEl.innerHTML = `❌ Erreur : ${e.message}<br><span style="font-size:0.55rem;color:#9ca3af;">Vérifie les règles Firebase (voir FIREBASE_SETUP.md)</span>`;
+  }
+}
+
+// ========================================
+// ADMIN — PANEL DONNER
+// ========================================
+
+// Dessine un mini-avatar pixel art sur un canvas à partir d'avatarData
+function drawMiniAvatar(canvas, avatarData, size) {
+  if (!avatarData || avatarData.length !== GRID_SIZE * GRID_SIZE) return false;
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const pixelSize = size / GRID_SIZE;
+  for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
+    const x = (i % GRID_SIZE) * pixelSize;
+    const y = Math.floor(i / GRID_SIZE) * pixelSize;
+    ctx.fillStyle = avatarData[i] || '#000000';
+    ctx.fillRect(x, y, pixelSize, pixelSize);
+  }
+  return true;
+}
+
+function updateHomeScreen() {
+  if (!player) return;
+  document.getElementById('homeUsername').textContent = player.username;
+  document.getElementById('homeLevel').textContent = player.level;
+  document.getElementById('homeCoins').textContent = player.coins;
+  document.getElementById('homeXP').textContent = player.xp;
+
+  // Mini avatar à l'accueil
+  const homeCanvas = document.getElementById('homeAvatarCanvas');
+  if (player.avatarData && drawMiniAvatar(homeCanvas, player.avatarData, 40)) {
+    homeCanvas.style.display = 'inline-block';
+  } else {
+    homeCanvas.style.display = 'none';
+  }
+
+  let badgesHTML = '';
+  if (player.isAdmin) badgesHTML += '<div class="badge admin">👑 ADMIN</div>';
+  player.badges.forEach(b => badgesHTML += `<div class="badge">${b}</div>`);
+  document.getElementById('homePlayerBadges').innerHTML = badgesHTML;
+
+  const firebaseStatus = document.getElementById('firebaseStatus');
+  if (firebaseReady && currentUserId && !currentUserId.startsWith('local_') && currentUserId !== 'admin') {
+    firebaseStatus.innerHTML = '<span style="color:#10b981;">🔥 Firebase actif — sauvegarde cloud toutes les secondes</span>';
+    firebaseStatus.style.display = 'block';
+  } else {
+    firebaseStatus.innerHTML = '<span style="color:#f59e0b;">💾 Mode local — configure Firebase pour le cloud</span>';
+    firebaseStatus.style.display = 'block';
+  }
+
+  if (player.isAdmin) {
+    document.getElementById('adminPanelHome').innerHTML = `
+      <div class="admin-panel">
+        <h3 style="color:#fbbf24;margin-bottom:15px;">⚙️ PANNEAU ADMIN</h3>
+        <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px;">
+          <button class="gold" onclick="openAdminGive()">🎁 Donner à un joueur</button>
+          <button class="gold" onclick="adminGiveAll()">🌍 Donner à TOUS</button>
+          <button class="danger" onclick="adminReset()">🔄 Reset local</button>
+        </div>
+      </div>
+    `;
+  } else {
+    document.getElementById('adminPanelHome').innerHTML = '';
+  }
+}
+
+async function openAdminGive() {
+  if (!player?.isAdmin || !firebaseReady) {
+    alert('❌ Firebase requis pour cette action.');
+    return;
+  }
+
+  // Charger la liste depuis /leaderboard (accessible publiquement)
+  const snap = await database.ref('leaderboard').once('value');
+  const data = snap.val() || {};
+  const entries = Object.entries(data).filter(([, p]) => p.username);
+
+  if (entries.length === 0) {
+    alert('Aucun joueur trouvé dans le classement.');
+    return;
+  }
+
+  const overlay = document.createElement('div');
+  overlay.id = 'adminOverlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:20000;overflow-y:auto;padding:20px;';
+  overlay.innerHTML = `
+    <div style="max-width:700px;margin:0 auto;background:#1a1a2e;border:3px solid #fbbf24;border-radius:20px;padding:25px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h2 style="color:#fbbf24;font-size:0.9rem;">🎁 DONNER À UN JOUEUR</h2>
+        <button class="danger" style="margin:0;" onclick="document.getElementById('adminOverlay').remove()">✖</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div>
+          <div style="font-size:0.6rem;color:#9ca3af;margin-bottom:6px;">👤 Joueur cible</div>
+          <select id="ag_target" style="width:100%;background:#000;color:#fff;border:2px solid #fbbf24;border-radius:8px;padding:10px;font-family:'Press Start 2P';font-size:0.6rem;">
+            ${entries.map(([uid, p]) => `<option value="${uid}">${p.username} (Niv.${p.level||1} • 🗺️${p.maxLevel||1} • 💰${p.coins||0})</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <div style="font-size:0.6rem;color:#9ca3af;margin-bottom:6px;">🎁 Type de récompense</div>
+          <select id="ag_type" style="width:100%;background:#000;color:#fff;border:2px solid #fbbf24;border-radius:8px;padding:10px;font-family:'Press Start 2P';font-size:0.6rem;">
+            <option value="coins">💰 Pièces</option>
+            <option value="xp">✨ XP</option>
+            <option value="hints">💡 Indices</option>
+            <option value="skips">⏭️ Passes</option>
+            <option value="secondChances">🔄 2èmes Chances</option>
+            <option value="xpBoost">⚡ Boost XP</option>
+            <option value="badge">🏅 Badge (texte)</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:0.6rem;color:#9ca3af;margin-bottom:6px;">🔢 Quantité / Texte badge</div>
+          <input id="ag_amount" type="text" placeholder="ex: 500 ou 🎖️ Héros" style="width:100%;background:#000;color:#fff;border:2px solid #fbbf24;border-radius:8px;padding:10px;font-family:'Press Start 2P';font-size:0.6rem;">
+        </div>
+        <button class="gold" style="width:100%;padding:15px;" onclick="adminGiveOne()">✅ DONNER</button>
+      </div>
+      <div style="margin-top:20px;">
+        <div style="font-size:0.6rem;color:#9ca3af;margin-bottom:10px;">👥 Tous les joueurs (${entries.length})</div>
+        <div style="max-height:200px;overflow-y:auto;">
+          ${entries.map(([, p]) => `
+            <div style="display:flex;justify-content:space-between;padding:8px 10px;margin:4px 0;background:rgba(255,255,255,0.05);border-radius:8px;font-size:0.55rem;">
+              <span style="color:#fbbf24;">${p.username}</span>
+              <span>Niv.${p.level||1}</span>
+              <span>🗺️${p.maxLevel||1}</span>
+              <span>💰${p.coins||0}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+async function adminGiveOne() {
+  const uid = document.getElementById('ag_target').value;
+  const type = document.getElementById('ag_type').value;
+  const amount = document.getElementById('ag_amount').value.trim();
+  if (!uid || !amount) { alert('⚠️ Remplis tous les champs !'); return; }
+
+  try {
+    // Modifier les données du joueur dans /players
+    const snap = await database.ref('players/' + uid).once('value');
+    const target = snap.val();
+    if (!target) { alert('❌ Joueur introuvable dans la DB.'); return; }
+
+    if (!target.inventory) target.inventory = { hints:0, skips:0, secondChances:0, xpBoost:0 };
+    if (!target.badges) target.badges = [];
+
+    if (type === 'coins') target.coins = (target.coins||0) + parseInt(amount);
+    else if (type === 'xp') target.xp = (target.xp||0) + parseInt(amount);
+    else if (type === 'badge') { if (!target.badges.includes(amount)) target.badges.push(amount); }
+    else target.inventory[type] = (target.inventory[type]||0) + parseInt(amount);
+
+    await database.ref('players/' + uid).set(target);
+
+    // Mettre à jour le leaderboard public aussi
+    await database.ref('leaderboard/' + uid).update({
+      username: target.username,
+      level: target.level || 1,
+      maxLevel: target.maxLevel || 1,
+      coins: target.coins || 0
+    });
+
+    alert(`✅ ${amount} ${type} donné à ${target.username} !`);
+    document.getElementById('adminOverlay')?.remove();
+  } catch(e) {
+    alert('❌ Erreur : ' + e.message);
+  }
+}
+
+async function adminGiveAll() {
+  if (!player?.isAdmin || !firebaseReady) {
+    alert('❌ Firebase requis pour cette action.');
+    return;
+  }
+
+  const overlay = document.createElement('div');
+  overlay.id = 'adminGiveAllOverlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:20000;overflow-y:auto;padding:20px;';
+  overlay.innerHTML = `
+    <div style="max-width:600px;margin:0 auto;background:#1a1a2e;border:3px solid #fbbf24;border-radius:20px;padding:25px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h2 style="color:#fbbf24;font-size:0.9rem;">🌍 DONNER À TOUS LES JOUEURS</h2>
+        <button class="danger" style="margin:0;" onclick="document.getElementById('adminGiveAllOverlay').remove()">✖</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div>
+          <div style="font-size:0.6rem;color:#9ca3af;margin-bottom:6px;">🎁 Type de récompense</div>
+          <select id="aga_type" style="width:100%;background:#000;color:#fff;border:2px solid #fbbf24;border-radius:8px;padding:10px;font-family:'Press Start 2P';font-size:0.6rem;">
+            <option value="coins">💰 Pièces</option>
+            <option value="xp">✨ XP</option>
+            <option value="hints">💡 Indices</option>
+            <option value="skips">⏭️ Passes</option>
+            <option value="secondChances">🔄 2èmes Chances</option>
+            <option value="xpBoost">⚡ Boost XP</option>
+            <option value="badge">🏅 Badge (texte)</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:0.6rem;color:#9ca3af;margin-bottom:6px;">🔢 Quantité / Texte badge</div>
+          <input id="aga_amount" type="text" placeholder="ex: 500 ou 🎖️ Héros" style="width:100%;background:#000;color:#fff;border:2px solid #fbbf24;border-radius:8px;padding:10px;font-family:'Press Start 2P';font-size:0.6rem;">
+        </div>
+        <div style="background:rgba(239,68,68,0.15);border:2px solid #ef4444;border-radius:10px;padding:12px;font-size:0.6rem;color:#fca5a5;">
+          ⚠️ Cette action modifie TOUS les joueurs existants en Firebase !
+        </div>
+        <button class="gold" style="width:100%;padding:15px;" onclick="confirmGiveAll()">🌍 DONNER À TOUS</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+async function confirmGiveAll() {
+  const type = document.getElementById('aga_type').value;
+  const amount = document.getElementById('aga_amount').value.trim();
+  if (!amount) { alert('⚠️ Remplis le montant !'); return; }
+  if (!confirm(`⚠️ Donner "${amount}" (${type}) à TOUS les joueurs Firebase ?`)) return;
+
+  document.getElementById('adminGiveAllOverlay').remove();
+
+  try {
+    const snap = await database.ref('players').once('value');
+    const data = snap.val() || {};
+    const updates = {};
+    let count = 0;
+
+    for (const [uid, p] of Object.entries(data)) {
+      if (p.isAdmin) continue;
+      const updated = JSON.parse(JSON.stringify(p)); // deep copy
+      if (!updated.inventory) updated.inventory = { hints:0, skips:0, secondChances:0, xpBoost:0 };
+      if (!updated.badges) updated.badges = [];
+
+      if (type === 'coins') updated.coins = (updated.coins||0) + parseInt(amount);
+      else if (type === 'xp') updated.xp = (updated.xp||0) + parseInt(amount);
+      else if (type === 'badge') { if (!updated.badges.includes(amount)) updated.badges.push(amount); }
+      else updated.inventory[type] = (updated.inventory[type]||0) + parseInt(amount);
+
+      updates['players/' + uid] = updated;
+
+      // Mettre à jour le leaderboard public
+      updates['leaderboard/' + uid] = {
+        username: updated.username,
+        level: updated.level || 1,
+        maxLevel: updated.maxLevel || 1,
+        coins: updated.coins || 0,
+        questionsAnswered: updated.stats?.questionsAnswered || 0,
+        bossesDefeated: updated.stats?.bossesDefeated || 0
+      };
+      count++;
+    }
+
+    await database.ref().update(updates);
+    alert(`✅ Don "${amount}" (${type}) envoyé à ${count} joueurs !`);
+  } catch(e) {
+    alert('❌ Erreur : ' + e.message);
+  }
+}
+
+function adminReset() {
+  if (!player?.isAdmin) return;
+  if (confirm('⚠️ Réinitialiser les données locales ?')) {
+    localStorage.removeItem('schoolmesAccounts');
+    alert('✅ Local réinitialisé !');
+    location.reload();
+  }
+}
+
+// ========================================
+// SAUVEGARDE — TOUTES LES SECONDES
+// ========================================
+let autoSaveTimer = null;
+
+function startAutoSave() {
+  if (autoSaveTimer) clearInterval(autoSaveTimer);
+  autoSaveTimer = setInterval(async () => {
+    if (player) {
+      await savePlayer();
+      await updateLeaderboardEntry();
+    }
+  }, 1000); // Toutes les secondes
+}
+
+function showSaveNotification() {
+  const el = document.getElementById('autosaveIndicator');
+  if (!el) return;
+  el.classList.add('show');
+  clearTimeout(el._hideTimer);
+  el.textContent = '⚙️.';
+  el._hideTimer = setTimeout(() => el.classList.remove('show'), 1200);
+}
+
+async function manualSave() {
+  if (!player) return;
+  await savePlayer();
+  await updateLeaderboardEntry();
+  alert('💾 Progression sauvegardée !');
+}
+
+window.addEventListener('beforeunload', () => { if (player) savePlayer(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden && player) savePlayer(); });
+
+// Lancer Firebase dès que la page est chargée
+window.addEventListener('load', () => {
+  initFirebase();
+});
+</script>
+</body>
+</html>
