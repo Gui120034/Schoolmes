@@ -600,7 +600,440 @@ input {
   flex-wrap: wrap;
 }
 
-/* AUTO-SAVE INDICATOR */
+/* ===== MÉCANIQUES ADDICTIVES ===== */
+
+/* COMBO & STREAK */
+#comboDisplay {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 9000;
+  text-align: center;
+  pointer-events: none;
+}
+.combo-badge {
+  background: linear-gradient(135deg, #ff6b00, #ff0066);
+  border: 3px solid #fbbf24;
+  border-radius: 15px;
+  padding: 10px 18px;
+  font-size: 0.75rem;
+  font-family: 'Press Start 2P', cursive;
+  color: white;
+  animation: comboPulse 0.5s ease-out;
+  text-shadow: 0 0 10px rgba(255,100,0,0.8);
+  box-shadow: 0 0 20px rgba(255,107,0,0.7);
+}
+.combo-badge.mega { background: linear-gradient(135deg, #7c3aed, #ec4899); font-size:1rem; }
+.combo-badge.ultra { background: linear-gradient(135deg, #fbbf24, #ef4444); font-size:1.2rem; }
+@keyframes comboPulse {
+  0% { transform: scale(0.5) rotate(-10deg); opacity:0; }
+  60% { transform: scale(1.3) rotate(3deg); }
+  100% { transform: scale(1) rotate(0deg); opacity:1; }
+}
+
+/* TIMER BAR */
+#timerBar {
+  width: 100%;
+  height: 8px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 10px 0;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+#timerFill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #fbbf24, #ef4444);
+  transition: width 0.1s linear, background 0.3s;
+  border-radius: 4px;
+}
+#timerText {
+  text-align: center;
+  font-size: 0.6rem;
+  color: #fbbf24;
+  margin-bottom: 5px;
+}
+
+/* FLOATING PARTICLES */
+.particle {
+  position: fixed;
+  pointer-events: none;
+  font-size: 1.5rem;
+  z-index: 9999;
+  animation: floatUp 1.5s ease-out forwards;
+}
+@keyframes floatUp {
+  0% { opacity:1; transform: translateY(0) scale(1); }
+  100% { opacity:0; transform: translateY(-150px) scale(0.5); }
+}
+
+/* SCREEN SHAKE */
+@keyframes screenShake {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+.shake { animation: screenShake 0.4s ease; }
+
+/* ANNOUNCEMENTS */
+#comboAnnouncement {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10000;
+  pointer-events: none;
+  text-align: center;
+  font-size: 2rem;
+  font-family: 'Press Start 2P', cursive;
+  color: #fbbf24;
+  text-shadow: 0 0 30px rgba(251,191,36,0.9), 0 0 60px rgba(251,191,36,0.5);
+  opacity: 0;
+}
+#comboAnnouncement.show {
+  animation: announceShow 1.5s ease forwards;
+}
+@keyframes announceShow {
+  0% { opacity:0; transform: translate(-50%,-50%) scale(0.3); }
+  20% { opacity:1; transform: translate(-50%,-50%) scale(1.2); }
+  70% { opacity:1; transform: translate(-50%,-50%) scale(1); }
+  100% { opacity:0; transform: translate(-50%,-80%) scale(0.8); }
+}
+
+/* LOOT CHEST */
+.loot-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border: 4px solid #fbbf24;
+  border-radius: 20px;
+  padding: 30px;
+  text-align: center;
+  z-index: 20000;
+  box-shadow: 0 0 60px rgba(251,191,36,0.5);
+  animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  min-width: 300px;
+}
+@keyframes popIn {
+  0% { transform: translate(-50%,-50%) scale(0); }
+  100% { transform: translate(-50%,-50%) scale(1); }
+}
+.rarity-common { color: #9ca3af; }
+.rarity-rare { color: #3b82f6; }
+.rarity-epic { color: #8b5cf6; }
+.rarity-legendary { color: #fbbf24; text-shadow: 0 0 20px #fbbf24; }
+
+/* DAILY QUEST PANEL */
+#dailyQuestBanner {
+  background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(5,150,105,0.2));
+  border: 2px solid #10b981;
+  border-radius: 12px;
+  padding: 15px;
+  margin: 10px 0;
+  cursor: pointer;
+}
+.quest-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  margin: 5px 0;
+  background: rgba(0,0,0,0.3);
+  border-radius: 8px;
+  font-size: 0.6rem;
+}
+.quest-progress-bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.quest-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #059669);
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+
+/* LEAGUE BADGE */
+.league-badge {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  margin: 5px;
+  border: 2px solid;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.league-bronze { background: linear-gradient(135deg, #cd7f32, #a0522d); border-color: #cd7f32; }
+.league-silver { background: linear-gradient(135deg, #c0c0c0, #a8a8a8); border-color: silver; color: #000; }
+.league-gold { background: linear-gradient(135deg, #ffd700, #ffa500); border-color: gold; color: #000; }
+.league-diamond { background: linear-gradient(135deg, #b9f2ff, #00d4ff); border-color: #00d4ff; color: #000; }
+
+/* TALENT TREE */
+.talent-node {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 3px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 0.5rem;
+  text-align: center;
+  padding: 5px;
+}
+.talent-node.unlocked { border-color: #10b981; background: rgba(16,185,129,0.2); }
+.talent-node.available { border-color: #fbbf24; background: rgba(251,191,36,0.1); animation: talentPulse 2s infinite; }
+.talent-node.locked { border-color: #4b5563; background: rgba(0,0,0,0.3); opacity: 0.5; }
+@keyframes talentPulse {
+  0%,100% { box-shadow: 0 0 0 rgba(251,191,36,0.4); }
+  50% { box-shadow: 0 0 20px rgba(251,191,36,0.8); }
+}
+
+/* ENERGY SYSTEM */
+#energyDisplay {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  padding: 10px;
+  background: rgba(239,68,68,0.1);
+  border: 2px solid #ef4444;
+  border-radius: 10px;
+  margin: 10px 0;
+  font-size: 0.65rem;
+}
+
+/* EVENT BANNER */
+#eventBanner {
+  background: linear-gradient(135deg, #7c3aed, #ec4899, #fbbf24);
+  background-size: 200% 200%;
+  animation: gradientShift 3s ease infinite, eventPulse 2s ease infinite;
+  border-radius: 12px;
+  padding: 12px;
+  margin: 10px 0;
+  text-align: center;
+  font-size: 0.65rem;
+  cursor: pointer;
+  border: 2px solid #fbbf24;
+}
+@keyframes gradientShift {
+  0%,100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@keyframes eventPulse {
+  0%,100% { box-shadow: 0 0 10px rgba(251,191,36,0.3); }
+  50% { box-shadow: 0 0 30px rgba(251,191,36,0.8); }
+}
+
+/* PRESTIGE */
+.prestige-badge {
+  background: linear-gradient(135deg, #ff6b00, #ffd700);
+  color: #000;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.55rem;
+  border: 2px solid #fff;
+}
+
+/* DAILY LOGIN REWARD */
+.login-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  border-radius: 10px;
+  border: 2px solid;
+  min-width: 60px;
+  font-size: 0.5rem;
+  transition: all 0.3s;
+}
+.login-day.claimed { background: rgba(16,185,129,0.2); border-color: #10b981; }
+.login-day.today { background: rgba(251,191,36,0.2); border-color: #fbbf24; animation: talentPulse 1.5s infinite; }
+.login-day.upcoming { background: rgba(0,0,0,0.3); border-color: #4b5563; opacity: 0.6; }
+
+/* ===== MODE MULTIJOUEUR ===== */
+
+/* Lobby & matchmaking */
+.pvp-lobby {
+  background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15));
+  border: 2px solid #6366f1;
+  border-radius: 16px;
+  padding: 20px;
+  margin: 15px 0;
+}
+
+.pvp-player-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 12px;
+  border: 2px solid rgba(99,102,241,0.4);
+  margin: 8px 0;
+  transition: all 0.3s;
+}
+.pvp-player-card.ready { border-color: #10b981; background: rgba(16,185,129,0.1); }
+.pvp-player-card.waiting { border-color: #f59e0b; animation: waitingPulse 1.5s infinite; }
+.pvp-player-card.winner { border-color: #fbbf24; background: rgba(251,191,36,0.15); box-shadow: 0 0 20px rgba(251,191,36,0.4); }
+.pvp-player-card.loser { border-color: #ef4444; background: rgba(239,68,68,0.05); opacity: 0.7; }
+@keyframes waitingPulse {
+  0%,100% { border-color: rgba(245,158,11,0.4); }
+  50% { border-color: #f59e0b; box-shadow: 0 0 15px rgba(245,158,11,0.4); }
+}
+
+.pvp-avatar { width: 48px; height: 48px; border-radius: 10px; border: 2px solid #fbbf24; flex-shrink: 0; background: #111; }
+.pvp-info { flex: 1; }
+.pvp-name { font-size: 0.75rem; color: #fbbf24; margin-bottom: 4px; }
+.pvp-stats { font-size: 0.55rem; color: #9ca3af; }
+.pvp-score { font-size: 1.1rem; color: #10b981; text-align: right; min-width: 50px; }
+
+/* VS divider */
+.vs-divider {
+  text-align: center;
+  font-size: 1.5rem;
+  color: #ef4444;
+  text-shadow: 0 0 20px #ef4444;
+  margin: 5px 0;
+  animation: vsPulse 1s infinite;
+}
+@keyframes vsPulse {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+/* Duel question */
+.duel-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(0,0,0,0.6);
+  border-radius: 12px;
+  border: 2px solid #6366f1;
+  margin-bottom: 15px;
+  gap: 10px;
+}
+.duel-side { text-align: center; flex: 1; }
+.duel-side-name { font-size: 0.5rem; color: #9ca3af; margin-bottom: 4px; }
+.duel-side-score { font-size: 1.2rem; color: #10b981; }
+.duel-sep { font-size: 0.9rem; color: #6366f1; padding: 0 8px; }
+
+/* Duel timer ring */
+.duel-timer-ring {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+}
+.duel-timer-ring svg { transform: rotate(-90deg); }
+.duel-timer-ring circle { fill: none; stroke-width: 4; }
+.duel-timer-ring .bg { stroke: rgba(255,255,255,0.1); }
+.duel-timer-ring .fg { stroke: #10b981; stroke-linecap: round; transition: stroke-dashoffset 0.5s, stroke 0.3s; }
+.duel-timer-num {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  font-size: 0.8rem; color: #fbbf24;
+}
+
+/* Opponent status indicator */
+.opponent-typing {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.55rem;
+  color: #9ca3af;
+  padding: 6px 10px;
+  background: rgba(99,102,241,0.1);
+  border-radius: 8px;
+  margin: 5px 0;
+}
+.dot-bounce { display: inline-flex; gap: 3px; }
+.dot-bounce span {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: #6366f1;
+  animation: dotBounce 1.2s infinite;
+}
+.dot-bounce span:nth-child(2) { animation-delay: 0.2s; }
+.dot-bounce span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dotBounce {
+  0%,80%,100% { transform: translateY(0); }
+  40% { transform: translateY(-6px); }
+}
+
+/* Challenge notification */
+.challenge-notif {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  border: 3px solid #fbbf24;
+  border-radius: 16px;
+  padding: 16px 20px;
+  z-index: 15000;
+  max-width: 300px;
+  box-shadow: 0 0 30px rgba(99,102,241,0.6);
+  animation: slideInRight 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  font-family: 'Press Start 2P', cursive;
+}
+@keyframes slideInRight {
+  from { transform: translateX(120%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* Rooms list */
+.room-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: rgba(0,0,0,0.5);
+  border: 2px solid rgba(99,102,241,0.3);
+  border-radius: 12px;
+  margin: 8px 0;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.room-card:hover { border-color: #6366f1; background: rgba(99,102,241,0.1); transform: translateX(4px); }
+.room-card.full { opacity: 0.5; cursor: not-allowed; }
+.room-status { display: flex; align-items: center; gap: 6px; font-size: 0.55rem; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; }
+.status-dot.open { background: #10b981; box-shadow: 0 0 6px #10b981; animation: dotPulse 1.5s infinite; }
+.status-dot.full { background: #ef4444; }
+.status-dot.playing { background: #f59e0b; }
+@keyframes dotPulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+
+/* Result screen */
+.result-bar {
+  height: 20px;
+  border-radius: 10px;
+  transition: width 1s cubic-bezier(0.34,1.1,0.64,1);
+  min-width: 4px;
+}
+.confetti-piece {
+  position: fixed;
+  width: 10px; height: 10px;
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 19000;
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+/* Auto-save indicator */
 #autosaveIndicator {
   position: fixed;
   bottom: 15px;
@@ -625,6 +1058,15 @@ input {
 
 <!-- AUTO-SAVE INDICATOR -->
 <div id="autosaveIndicator">⚙️...</div>
+
+<!-- COMBO DISPLAY -->
+<div id="comboDisplay"></div>
+
+<!-- COMBO ANNOUNCEMENT -->
+<div id="comboAnnouncement"></div>
+
+<!-- PARTICLE CONTAINER -->
+<div id="particles" style="position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:9998;overflow:hidden;"></div>
 
 <!-- ERREUR CHARGEMENT FIREBASE -->
 <div id="fbLoadError" style="display:none; position:fixed; top:0; left:0; right:0; background:#dc2626; color:white; padding:15px; text-align:center; font-family:'Press Start 2P',cursive; font-size:0.65rem; z-index:99999;">
@@ -687,17 +1129,43 @@ input {
   
   <div id="adminPanelHome"></div>
   
+  <!-- ENERGY DISPLAY -->
+  <div id="energyDisplay">
+    ⚡ ÉNERGIE : <span id="energyCount">10</span>/10
+    <div id="energyBar" style="flex:1;height:10px;background:rgba(0,0,0,0.5);border-radius:5px;overflow:hidden;border:1px solid #ef4444;">
+      <div id="energyFill" style="height:100%;background:linear-gradient(90deg,#ef4444,#f97316);width:100%;transition:width 0.5s;"></div>
+    </div>
+    <span id="energyTimer" style="font-size:0.5rem;color:#9ca3af;"></span>
+  </div>
+
+  <!-- EVENT BANNER -->
+  <div id="eventBanner" onclick="showEventDetails()" style="display:none;"></div>
+
+  <!-- DAILY LOGIN REWARD -->
+  <div id="dailyLoginRewardBanner" style="display:none;background:linear-gradient(135deg,rgba(251,191,36,0.15),rgba(245,158,11,0.15));border:2px solid #fbbf24;border-radius:12px;padding:15px;margin:10px 0;cursor:pointer;" onclick="openDailyRewardModal()">
+    🎁 <span style="color:#fbbf24;">CONNEXION JOURNALIÈRE</span> — Récupère ta récompense !
+  </div>
+
+  <!-- DAILY QUESTS BANNER -->
+  <div id="dailyQuestBanner" onclick="openQuestsModal()">
+    <div style="font-size:0.7rem;color:#10b981;margin-bottom:8px;">📋 QUÊTES DU JOUR</div>
+    <div id="questsPreview"></div>
+  </div>
+  
   <!-- Indicateur Firebase -->
   <div id="firebaseStatus" style="text-align:center; margin:15px 0; padding:10px; background:rgba(16,185,129,0.2); border-radius:10px; font-size:0.6rem; display:none;">
     <span style="color:#10b981;">🔥 Connecté à Firebase</span>
   </div>
   
   <div style="text-align:center; margin:30px 0;">
-    <button class="primary" onclick="showScreen('gameScreen'); initGame();">🎮 Jouer</button>
+    <button class="primary" onclick="tryStartGame()">🎮 Jouer</button>
     <button class="gold" onclick="showScreen('shopScreen'); renderShop();">🛒 Boutique</button>
     <button onclick="showScreen('avatarScreen'); initAvatarEditor();">🎨 Avatar</button>
     <button style="background:linear-gradient(135deg,#6366f1,#4f46e5);" onclick="showScreen('leaderboardScreen'); renderLeaderboard();">🏆 Classement</button>
+    <button style="background:linear-gradient(135deg,#ec4899,#be185d);border:2px solid #fbbf24;" onclick="showScreen('multiplayerScreen'); initMultiplayer();">⚔️ Multijoueur</button>
     <button style="background:linear-gradient(135deg,#10b981,#059669);" onclick="manualSave()">💾 Sauvegarder</button>
+    <button style="background:linear-gradient(135deg,#f59e0b,#d97706);" onclick="openTalentTree()">🌳 Talents</button>
+    <button style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);" onclick="openQuestsModal()">📋 Quêtes</button>
     <button class="danger" onclick="logout()">🚪 Déconnexion</button>
   </div>
 </div>
@@ -745,6 +1213,10 @@ input {
 <div id="quizScreen" class="screen">
   <h2 class="game-title" id="quizLevelTitle">Niveau X</h2>
   <p style="text-align:center; font-size:0.9rem; margin-bottom:20px;" id="quizBiomeInfo">-</p>
+  
+  <!-- TIMER -->
+  <div id="timerText">⏱️ <span id="timerCountdown">15</span>s — Réponds vite pour un bonus !</div>
+  <div id="timerBar"><div id="timerFill" style="width:100%;"></div></div>
   
   <!-- COMPTEUR DE VIES -->
   <div class="lives-counter">
@@ -820,6 +1292,120 @@ input {
   <div class="shop-grid" id="shopItems"></div>
 </div>
 
+</div>
+
+<!-- ===== MULTIJOUEUR ===== -->
+<div id="multiplayerScreen" class="screen">
+  <button class="danger" onclick="leaveMpLobby(); showScreen('homeScreen'); updateHomeScreen();">⬅️ Retour</button>
+  <h2 class="game-title" style="color:#818cf8;">⚔️ MULTIJOUEUR</h2>
+
+  <!-- Firebase warning -->
+  <div id="mpFirebaseWarning" style="display:none;background:rgba(239,68,68,0.15);border:2px solid #ef4444;border-radius:10px;padding:15px;text-align:center;font-size:0.6rem;color:#fca5a5;margin:15px 0;">
+    ⚠️ Firebase requis pour le multijoueur.<br>Connecte-toi avec un compte en ligne pour jouer contre d'autres joueurs.
+  </div>
+
+  <!-- Tabs -->
+  <div style="display:flex;gap:8px;justify-content:center;margin:15px 0;">
+    <button id="mpTabRooms" class="primary" onclick="switchMpTab('rooms')">🏠 Salons</button>
+    <button id="mpTabChallenge" onclick="switchMpTab('challenge')">⚔️ Défier</button>
+    <button id="mpTabHistory" onclick="switchMpTab('history')">📜 Historique</button>
+  </div>
+
+  <!-- TAB: ROOMS -->
+  <div id="mpTabRoomsContent">
+    <div style="display:flex;gap:10px;justify-content:center;margin-bottom:15px;flex-wrap:wrap;">
+      <button class="primary" onclick="createRoom()">➕ Créer un salon</button>
+      <button onclick="refreshRooms()">🔄 Actualiser</button>
+    </div>
+    <div id="mpRoomsList" style="max-height:400px;overflow-y:auto;">
+      <div style="text-align:center;color:#9ca3af;font-size:0.6rem;padding:20px;">⏳ Chargement des salons...</div>
+    </div>
+  </div>
+
+  <!-- TAB: CHALLENGE -->
+  <div id="mpTabChallengeContent" style="display:none;">
+    <div class="pvp-lobby" style="text-align:center;">
+      <div style="font-size:0.7rem;color:#fbbf24;margin-bottom:15px;">⚔️ DÉFIER UN JOUEUR EN LIGNE</div>
+      <div id="mpOnlineList" style="max-height:300px;overflow-y:auto;margin-bottom:15px;">
+        <div style="color:#9ca3af;font-size:0.6rem;padding:20px;">⏳ Recherche des joueurs en ligne...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: HISTORY -->
+  <div id="mpTabHistoryContent" style="display:none;">
+    <div id="mpHistory" style="max-height:400px;overflow-y:auto;">
+      <div style="text-align:center;color:#9ca3af;font-size:0.6rem;padding:20px;">Aucune partie jouée encore.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DUEL SCREEN ===== -->
+<div id="duelScreen" class="screen">
+  <!-- HUD with both players -->
+  <div class="duel-hud">
+    <div class="duel-side" id="duelMySide">
+      <div class="duel-side-name" id="duelMyName">-</div>
+      <div class="duel-side-score" id="duelMyScore">0</div>
+      <div style="font-size:0.45rem;color:#9ca3af;" id="duelMyCorrect">0 corrects</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+      <div class="duel-timer-ring" id="duelTimerRing">
+        <svg width="60" height="60" viewBox="0 0 60 60">
+          <circle class="bg" cx="30" cy="30" r="26"/>
+          <circle class="fg" id="duelTimerCircle" cx="30" cy="30" r="26" stroke-dasharray="163" stroke-dashoffset="0"/>
+        </svg>
+        <div class="duel-timer-num" id="duelTimerNum">20</div>
+      </div>
+      <div style="font-size:0.5rem;color:#6366f1;" id="duelRoundInfo">Q 1/10</div>
+    </div>
+    <div class="duel-side" id="duelOppSide" style="text-align:right;">
+      <div class="duel-side-name" id="duelOppName">-</div>
+      <div class="duel-side-score" id="duelOppScore">0</div>
+      <div style="font-size:0.45rem;color:#9ca3af;" id="duelOppCorrect">0 corrects</div>
+    </div>
+  </div>
+
+  <!-- Question -->
+  <div class="question-container">
+    <div style="font-size:0.55rem;color:#6366f1;margin-bottom:8px;" id="duelBiome">-</div>
+    <div class="question-text" id="duelQuestion">-</div>
+
+    <!-- Opponent status -->
+    <div class="opponent-typing" id="duelOppStatus">
+      <span>L'adversaire réfléchit</span>
+      <div class="dot-bounce"><span></span><span></span><span></span></div>
+    </div>
+
+    <!-- QCM choices -->
+    <div id="duelChoices" class="choice-buttons" style="display:none;"></div>
+
+    <!-- Text input -->
+    <div id="duelTextGroup" class="input-group">
+      <input type="text" id="duelAnswerInput" placeholder="Ta réponse..." onkeypress="if(event.key==='Enter') submitDuelAnswer()">
+    </div>
+
+    <div id="duelFeedback" style="text-align:center;margin:15px 0;font-size:0.8rem;min-height:40px;"></div>
+
+    <div style="text-align:center;">
+      <button class="primary" id="duelSubmitBtn" onclick="submitDuelAnswer()">✅ Répondre</button>
+      <button class="danger" onclick="confirmAbandonDuel()">🏳️ Abandonner</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DUEL RESULT SCREEN ===== -->
+<div id="duelResultScreen" class="screen">
+  <h1 class="game-title" id="duelResultTitle">RÉSULTAT</h1>
+
+  <div style="display:flex;flex-direction:column;gap:12px;margin:25px 0;" id="duelResultCards"></div>
+
+  <div id="duelRewardsBox" style="background:rgba(16,185,129,0.1);border:2px solid #10b981;border-radius:12px;padding:15px;text-align:center;margin:15px 0;font-size:0.65rem;"></div>
+
+  <div style="text-align:center;margin-top:25px;">
+    <button class="primary" onclick="showScreen('multiplayerScreen'); initMultiplayer();">🔄 Rejouer</button>
+    <button class="gold" onclick="showScreen('homeScreen'); updateHomeScreen();">🏠 Menu</button>
+  </div>
 </div>
 
 <!-- AVATAR -->
@@ -986,6 +1572,8 @@ const SHOP_ITEMS = [
   { id: 25, emoji: '📦', name: 'Coffre Mystère',   desc: 'Contient un bonus surprise !',        price: 250,  category: '✨ Spéciaux' },
   { id: 26, emoji: '🎁', name: 'Mega Coffre',      desc: 'Coffre premium = gros bonus',         price: 600,  category: '✨ Spéciaux' },
   { id: 27, emoji: '♻️', name: 'Reset Erreurs',    desc: 'Remet à 0 tes erreurs de session',   price: 1500, category: '✨ Spéciaux' },
+  { id: 28, emoji: '⚡', name: 'Recharge Énergie', desc: 'Restaure 5 points d\'énergie',         price: 200,  category: '✨ Spéciaux' },
+  { id: 29, emoji: '⚡', name: 'Énergie Complète', desc: 'Restaure toute ton énergie (10/10)',   price: 400,  category: '✨ Spéciaux' },
 ];
 
 // QUESTIONS (adaptées pour validation flexible)
@@ -1510,8 +2098,7 @@ function startQuiz(level) {
   sessionCoinsStart = player.coins;
   
   showScreen('quizScreen');
-  
-  document.getElementById('quizLevelTitle').textContent = `Niveau ${level}`;
+  startQuestionTimer();
   
   const biome = getBiome(level);
   const isBoss = level % 100 === 0;
@@ -1746,8 +2333,23 @@ function submitAnswer() {
   const isCorrect = normalizedUser === normalizedCorrect;
   
   if (isCorrect) {
+    // ===== ADDICTIVE MECHANICS: CORRECT ANSWER =====
+    clearInterval(questionTimer);
+    incrementCombo();
+    const comboMult = getComboMultiplier();
+    const timeBonus = getTimeBonus();
+    playCorrectSound();
+    spawnParticles(window.innerWidth/2, window.innerHeight/2, 'correct');
+
     const isBoss = currentLevel % 100 === 0;
     let xpGain = isBoss ? 250 : 50;
+    
+    // Talent: extra XP
+    if (player.talents && player.talents.includes('t2')) xpGain = Math.floor(xpGain * 1.1);
+    if (player.talents && player.talents.includes('t8')) xpGain *= 2;
+    
+    // Time bonus
+    xpGain += timeBonus * 10;
     
     // Boost XP ×2
     if (player.inventory.xpBoost > 0) {
@@ -1760,12 +2362,32 @@ function submitAnswer() {
       player.inventory.xpBoost3--;
     }
     
+    // Event multiplier
+    xpGain = Math.floor(xpGain * getEventMultiplier('xp'));
+    if (isBoss) xpGain = Math.floor(xpGain * getEventMultiplier('boss'));
+    
+    // COMBO MULTIPLIER on XP
+    xpGain = Math.floor(xpGain * comboMult);
+
     let coinGain = isBoss ? 100 : 20;
+    
+    // Talent: extra coins
+    if (player.talents && player.talents.includes('t1')) coinGain = Math.floor(coinGain * 1.1);
+    if (player.talents && player.talents.includes('t7')) coinGain = Math.floor(coinGain * 1.25);
+    
     // Bonus Pièces ×2
     if ((player.inventory.coinBoost || 0) > 0) {
       coinGain *= 2;
       player.inventory.coinBoost--;
     }
+    
+    // Event multiplier
+    coinGain = Math.floor(coinGain * getEventMultiplier('coins'));
+    // COMBO MULTIPLIER on coins
+    coinGain = Math.floor(coinGain * comboMult);
+    
+    // Prestige bonus
+    if (player.prestigeLevel) coinGain = Math.floor(coinGain * (1 + player.prestigeLevel * 0.5));
     
     player.xp += xpGain;
     player.coins += coinGain;
@@ -1773,22 +2395,35 @@ function submitAnswer() {
     sessionCorrect++;
     if (isBoss) player.stats.bossesDefeated++;
     
+    // Quest tracking
+    updateQuestProgress('questionsAnswered', 1);
+    if (comboCount >= 5) updateQuestProgress('maxCombo', comboCount);
+    updateQuestProgress('sessionCoins', coinGain);
+    if (isBoss) updateQuestProgress('bossesDefeated', 1);
+    
     const xpNeeded = player.level * 100;
     if (player.xp >= xpNeeded) {
       player.level++;
       player.xp -= xpNeeded;
       checkBadges();
+      checkTalentPoints();
     }
     
     if (currentLevel >= player.maxLevel) player.maxLevel = currentLevel + 1;
     
+    // Loot drop (20% chance, 30% with lucky talent)
+    const dropChance = (player.talents && player.talents.includes('t5')) ? 0.35 : 0.2;
+    setTimeout(() => tryDropLoot(dropChance), 2200);
+    
     savePlayer();
     
+    const comboTxt = comboMult > 1 ? ` 🔥×${comboMult}` : '';
+    const timeTxt = timeBonus > 0 ? ` ⏱️+${timeBonus*10}XP` : '';
     const boostMsg = player.inventory.xpBoost > 0 || player.inventory.xpBoost3 > 0 ? ' ⚡ BOOST !' : '';
     const coinMsg = (player.inventory.coinBoost || 0) > 0 ? ' 💸 BONUS !' : '';
     document.getElementById('quizFeedback').innerHTML = `
-      <div style="color:#10b981; font-size:1.2rem;">✅ CORRECT !</div>
-      <div style="color:#fbbf24;">+${xpGain} XP${boostMsg} | +${coinGain} 💰${coinMsg}</div>
+      <div style="color:#10b981; font-size:1.2rem;">✅ CORRECT !${comboTxt}</div>
+      <div style="color:#fbbf24;">+${xpGain} XP${boostMsg}${timeTxt} | +${coinGain} 💰${coinMsg}</div>
     `;
     
     setTimeout(() => {
@@ -1798,6 +2433,9 @@ function submitAnswer() {
     
   } else {
     // ERREUR — vérifier Bouclier ou Gel
+    clearInterval(questionTimer);
+    resetCombo();
+    playWrongSound();
     let blocked = false;
     if (player._shieldActive) {
       player._shieldActive = false;
@@ -1833,6 +2471,7 @@ function submitAnswer() {
 
     if (!blocked) {
       updateHeartsDisplay();
+      screenShake();
       document.getElementById('quizFeedback').innerHTML = `
         <div style="color:#ef4444;">❌ Incorrect !</div>
         <div style="color:#9ca3af; margin-top:10px;">Réponse: ${correctAnswer}</div>
@@ -2041,6 +2680,12 @@ function buyItem(id) {
     sessionErrors = 0;
     updateHeartsDisplay && updateHeartsDisplay();
   }
+  else if (id === 28) {
+    getEnergy(); player.energy = Math.min(MAX_ENERGY, player.energy + 5); updateEnergyDisplay();
+  }
+  else if (id === 29) {
+    player.energy = MAX_ENERGY; player.lastEnergyTime = Date.now(); updateEnergyDisplay();
+  }
 
   savePlayer();
   alert(`🎉 ${item.name} acheté !`);
@@ -2162,7 +2807,9 @@ function randomAvatar() {
 //   "rules": {
 //     "players": { "$uid": { ".read": "$uid === auth.uid", ".write": "$uid === auth.uid" } },
 //     "leaderboard": { ".read": true, ".write": "auth != null" },
-//     "admin_gifts": { ".read": "auth != null", ".write": "auth != null" }
+//     "rooms": { ".read": "auth != null", ".write": "auth != null" },
+//     "presence": { ".read": "auth != null", ".write": "auth != null" },
+//     "challenges": { "$uid": { ".read": "$uid === auth.uid", ".write": "auth != null" } }
 //   }
 // }
 
@@ -2299,6 +2946,14 @@ function updateHomeScreen() {
   let badgesHTML = '';
   if (player.isAdmin) badgesHTML += '<div class="badge admin">👑 ADMIN</div>';
   player.badges.forEach(b => badgesHTML += `<div class="badge">${b}</div>`);
+  
+  // Prestige badge
+  if (player.prestigeLevel) badgesHTML += `<span class="prestige-badge">⭐ Prestige ${player.prestigeLevel}</span>`;
+  
+  // League badge
+  const league = getLeague(player.maxLevel || 1);
+  badgesHTML += `<span class="league-badge ${league.class}">${league.emoji} ${league.name}</span>`;
+  
   document.getElementById('homePlayerBadges').innerHTML = badgesHTML;
 
   const firebaseStatus = document.getElementById('firebaseStatus');
@@ -2318,11 +2973,33 @@ function updateHomeScreen() {
           <button class="gold" onclick="openAdminGive()">🎁 Donner à un joueur</button>
           <button class="gold" onclick="adminGiveAll()">🌍 Donner à TOUS</button>
           <button class="danger" onclick="adminReset()">🔄 Reset local</button>
+          <button style="background:linear-gradient(135deg,#7c3aed,#6d28d9);" onclick="triggerRandomEvent()">⚡ Déclencher Événement</button>
+          <button style="background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#000;" onclick="openPrestigeModal()">⭐ Test Prestige</button>
         </div>
       </div>
     `;
   } else {
     document.getElementById('adminPanelHome').innerHTML = '';
+  }
+
+  // Addictive features
+  updateEnergyDisplay();
+  checkDailyLogin();
+  getDailyQuests();
+  renderQuestsPreview();
+  refreshEventBanner();
+  
+  // Show prestige button if eligible
+  if (canPrestige()) {
+    const existing = document.getElementById('prestigeBtn');
+    if (!existing) {
+      const btn = document.createElement('button');
+      btn.id = 'prestigeBtn';
+      btn.style.cssText = 'background:linear-gradient(135deg,#ffd700,#ff6b00);color:#000;width:100%;margin:10px 0;padding:15px;font-size:0.8rem;border:3px solid #fff;box-shadow:0 0 30px rgba(255,215,0,0.7);animation:eventPulse 2s infinite;';
+      btn.innerHTML = '⭐ PRESTIGE DISPONIBLE ! Clique pour recommencer avec des bonus !';
+      btn.onclick = openPrestigeModal;
+      document.getElementById('dailyQuestBanner').before(btn);
+    }
   }
 }
 
@@ -2529,6 +3206,1435 @@ function adminReset() {
 }
 
 // ========================================
+// 🎯 MÉCANIQUES ADDICTIVES
+// ========================================
+
+// --- 1. COMBO & STREAK SYSTEM ---
+let comboCount = 0;
+let comboTimer = null;
+let questionTimer = null;
+let questionTimeLeft = 15;
+const COMBO_TIMEOUT = 8000; // 8 secondes entre bonnes réponses pour garder le combo
+
+function resetCombo() {
+  comboCount = 0;
+  updateComboDisplay();
+}
+
+function incrementCombo() {
+  comboCount++;
+  clearTimeout(comboTimer);
+  comboTimer = setTimeout(resetCombo, COMBO_TIMEOUT);
+  updateComboDisplay();
+  announceCombo();
+}
+
+function getComboMultiplier() {
+  if (comboCount >= 10) return 5;
+  if (comboCount >= 7) return 4;
+  if (comboCount >= 5) return 3;
+  if (comboCount >= 3) return 2;
+  return 1;
+}
+
+function updateComboDisplay() {
+  const el = document.getElementById('comboDisplay');
+  if (!el) return;
+  if (comboCount < 2) { el.innerHTML = ''; return; }
+  const mult = getComboMultiplier();
+  let cls = 'combo-badge';
+  if (comboCount >= 10) cls += ' ultra';
+  else if (comboCount >= 5) cls += ' mega';
+  el.innerHTML = `<div class="${cls}">🔥 COMBO x${comboCount}<br><span style="font-size:0.5rem;">×${mult} XP/💰</span></div>`;
+}
+
+function announceCombo() {
+  const el = document.getElementById('comboAnnouncement');
+  if (!el) return;
+  const msgs = { 3:'🔥 COMBO!', 5:'💥 SUPER COMBO!', 7:'⚡ MEGA COMBO!', 10:'🌟 ULTRA COMBO!', 15:'👑 LEGENDARY!', 20:'🌌 GODLIKE!!' };
+  const msg = msgs[comboCount];
+  if (!msg) return;
+  el.textContent = msg;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  playComboSound(comboCount);
+  setTimeout(() => el.classList.remove('show'), 1500);
+}
+
+// --- TIMER SYSTEM ---
+function startQuestionTimer() {
+  clearInterval(questionTimer);
+  questionTimeLeft = 15;
+  updateTimerDisplay();
+  questionTimer = setInterval(() => {
+    questionTimeLeft--;
+    updateTimerDisplay();
+    if (questionTimeLeft <= 0) {
+      clearInterval(questionTimer);
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const countdown = document.getElementById('timerCountdown');
+  const fill = document.getElementById('timerFill');
+  if (!countdown || !fill) return;
+  countdown.textContent = Math.max(0, questionTimeLeft);
+  const pct = (questionTimeLeft / 15) * 100;
+  fill.style.width = pct + '%';
+  if (questionTimeLeft <= 5) fill.style.background = '#ef4444';
+  else if (questionTimeLeft <= 10) fill.style.background = 'linear-gradient(90deg,#fbbf24,#ef4444)';
+  else fill.style.background = 'linear-gradient(90deg,#10b981,#fbbf24)';
+}
+
+function getTimeBonus() {
+  if (questionTimeLeft >= 12) return 3;
+  if (questionTimeLeft >= 8) return 2;
+  if (questionTimeLeft >= 4) return 1;
+  return 0;
+}
+
+// --- 2. PARTICLES & SOUND ---
+function spawnParticles(x, y, type = 'correct') {
+  const container = document.getElementById('particles');
+  if (!container) return;
+  const emojis = type === 'correct' ? ['✨','⭐','💫','🌟','💥'] : ['💢','❌','💔'];
+  for (let i = 0; i < 6; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    p.style.left = (x + (Math.random()-0.5)*100) + 'px';
+    p.style.top = (y + (Math.random()-0.5)*50) + 'px';
+    p.style.animationDelay = (Math.random()*0.3) + 's';
+    container.appendChild(p);
+    setTimeout(() => p.remove(), 2000);
+  }
+}
+
+function screenShake(intensity = 'light') {
+  const screens = document.querySelectorAll('.screen.active');
+  screens.forEach(s => {
+    s.classList.add('shake');
+    setTimeout(() => s.classList.remove('shake'), 400);
+  });
+}
+
+function playComboSound(combo) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    const baseFreq = 440 + Math.min(combo, 20) * 30;
+    osc.frequency.setValueAtTime(baseFreq, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.3);
+  } catch(e) {}
+}
+
+function playCorrectSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [523, 659, 784].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.08);
+      gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + i * 0.08 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.08 + 0.2);
+      osc.start(ctx.currentTime + i * 0.08);
+      osc.stop(ctx.currentTime + i * 0.08 + 0.25);
+    });
+  } catch(e) {}
+}
+
+function playWrongSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(200, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.3);
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.3);
+  } catch(e) {}
+}
+
+// --- 3. LOOT & DROPS ---
+const LOOT_TABLE = [
+  { chance: 0.4, rarity: 'common', reward: () => { player.coins += 25; return '💰 25 Pièces'; }, label: 'Pièces communes', rarityClass: 'rarity-common' },
+  { chance: 0.3, rarity: 'rare', reward: () => { player.inventory.hints = (player.inventory.hints||0)+1; return '💡 1 Indice'; }, label: 'Indice Rare', rarityClass: 'rarity-rare' },
+  { chance: 0.15, rarity: 'rare', reward: () => { player.coins += 150; return '💰 150 Pièces'; }, label: 'Pièces Rares', rarityClass: 'rarity-rare' },
+  { chance: 0.1, rarity: 'epic', reward: () => { player.inventory.xpBoost = (player.inventory.xpBoost||0)+3; return '⚡ Boost XP x3'; }, label: 'Boost Épique', rarityClass: 'rarity-epic' },
+  { chance: 0.04, rarity: 'legendary', reward: () => { player.coins += 500; player.inventory.skips=(player.inventory.skips||0)+2; return '💰 500 + ⏭️×2'; }, label: 'Trésor Légendaire!', rarityClass: 'rarity-legendary' },
+  { chance: 0.01, rarity: 'legendary', reward: () => { player.inventory.secondChances=(player.inventory.secondChances||0)+3; return '🔄 3 Secondes Chances'; }, label: '⚡ JACKPOT!', rarityClass: 'rarity-legendary' },
+];
+
+function rollLoot() {
+  const r = Math.random();
+  let cumul = 0;
+  for (const item of LOOT_TABLE) {
+    cumul += item.chance;
+    if (r < cumul) return item;
+  }
+  return LOOT_TABLE[0];
+}
+
+function tryDropLoot(dropChance = 0.2) {
+  if (Math.random() > dropChance) return;
+  const loot = rollLoot();
+  const msg = loot.reward();
+  savePlayer();
+  showLootPopup(loot, msg);
+}
+
+function showLootPopup(loot, msg) {
+  const overlay = document.createElement('div');
+  overlay.id = 'lootOverlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:19999;';
+  const popup = document.createElement('div');
+  popup.className = 'loot-popup';
+  popup.innerHTML = `
+    <div style="font-size:3rem;margin-bottom:10px;">📦</div>
+    <div style="font-size:0.7rem;color:#fbbf24;margin-bottom:5px;">COFFRE SURPRISE !</div>
+    <div class="${loot.rarityClass}" style="font-size:0.8rem;margin-bottom:10px;text-transform:uppercase;">${loot.label}</div>
+    <div style="font-size:1.2rem;margin:15px 0;">${msg}</div>
+    <button class="gold" style="width:100%;" onclick="document.getElementById('lootOverlay').remove()">🎉 Super !</button>
+  `;
+  overlay.appendChild(popup);
+  document.body.appendChild(overlay);
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+}
+
+// --- 4. ENERGY SYSTEM ---
+const MAX_ENERGY = 10;
+const ENERGY_REGEN_MS = 30 * 60 * 1000; // 30 min par énergie
+
+function getEnergy() {
+  if (!player) return MAX_ENERGY;
+  if (!player.energy) player.energy = MAX_ENERGY;
+  if (!player.lastEnergyTime) player.lastEnergyTime = Date.now();
+  
+  // Regen
+  const elapsed = Date.now() - player.lastEnergyTime;
+  const regen = Math.floor(elapsed / ENERGY_REGEN_MS);
+  if (regen > 0) {
+    player.energy = Math.min(MAX_ENERGY, player.energy + regen);
+    player.lastEnergyTime += regen * ENERGY_REGEN_MS;
+  }
+  return player.energy;
+}
+
+function useEnergy() {
+  getEnergy();
+  if (player.energy <= 0) return false;
+  player.energy--;
+  player.lastEnergyTime = player.lastEnergyTime || Date.now();
+  savePlayer();
+  updateEnergyDisplay();
+  return true;
+}
+
+function updateEnergyDisplay() {
+  const energy = getEnergy();
+  const energyEl = document.getElementById('energyCount');
+  const fillEl = document.getElementById('energyFill');
+  const timerEl = document.getElementById('energyTimer');
+  if (energyEl) energyEl.textContent = energy;
+  if (fillEl) fillEl.style.width = (energy / MAX_ENERGY * 100) + '%';
+  if (timerEl && energy < MAX_ENERGY) {
+    const nextRegen = ENERGY_REGEN_MS - ((Date.now() - player.lastEnergyTime) % ENERGY_REGEN_MS);
+    const mins = Math.ceil(nextRegen / 60000);
+    timerEl.textContent = `+1 dans ${mins}min`;
+  } else if (timerEl) {
+    timerEl.textContent = '✅ Plein';
+  }
+}
+
+function tryStartGame() {
+  if (player && player.isAdmin) { showScreen('gameScreen'); initGame(); return; }
+  const energy = getEnergy();
+  if (energy <= 0) {
+    alert('⚡ Plus d\'énergie ! Elle se recharge automatiquement toutes les 30 minutes.\n\nOu achetez des recharges dans la boutique !');
+    return;
+  }
+  useEnergy();
+  showScreen('gameScreen');
+  initGame();
+}
+
+// --- 5. DAILY LOGIN REWARDS ---
+const DAILY_REWARDS = [
+  { day: 1, reward: '💰 50 Pièces', fn: () => player.coins += 50 },
+  { day: 2, reward: '💡 2 Indices', fn: () => player.inventory.hints = (player.inventory.hints||0)+2 },
+  { day: 3, reward: '💰 150 Pièces', fn: () => player.coins += 150 },
+  { day: 4, reward: '⏭️ 2 Passes', fn: () => player.inventory.skips = (player.inventory.skips||0)+2 },
+  { day: 5, reward: '⚡ Boost XP x5', fn: () => player.inventory.xpBoost = (player.inventory.xpBoost||0)+5 },
+  { day: 6, reward: '💰 300 Pièces', fn: () => player.coins += 300 },
+  { day: 7, reward: '🌟 MEGA BONUS: 500💰 + 3 Indices + Boost XP!', fn: () => { player.coins+=500; player.inventory.hints=(player.inventory.hints||0)+3; player.inventory.xpBoost=(player.inventory.xpBoost||0)+10; } },
+];
+
+function checkDailyLogin() {
+  if (!player) return;
+  const today = new Date().toDateString();
+  if (player.lastLoginDate === today) return;
+  
+  // Reset claimed status for new day
+  player.dailyRewardClaimed = false;
+  player.lastLoginDate = today;
+  player.loginStreak = (player.loginStreak || 0) + 1;
+  
+  // Reset streak if missed a day
+  if (player.lastLoginCheck) {
+    const lastDate = new Date(player.lastLoginCheck);
+    const diff = (new Date() - lastDate) / (1000 * 60 * 60 * 24);
+    if (diff > 1.5) player.loginStreak = 1;
+  }
+  player.lastLoginCheck = new Date().toISOString();
+  
+  document.getElementById('dailyLoginRewardBanner').style.display = 'block';
+}
+
+function openDailyRewardModal() {
+  if (!player) return;
+  const streak = player.loginStreak || 1;
+  const dayIndex = ((streak - 1) % 7);
+  const todayReward = DAILY_REWARDS[dayIndex];
+  const claimed = player.dailyRewardClaimed === true;
+  
+  const overlay = document.createElement('div');
+  overlay.id = 'dailyRewardModal';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:20000;overflow-y:auto;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `
+    <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:4px solid #fbbf24;border-radius:20px;padding:30px;max-width:500px;width:90%;text-align:center;">
+      <h2 style="color:#fbbf24;font-size:0.9rem;margin-bottom:5px;">🎁 RÉCOMPENSES DE CONNEXION</h2>
+      <div style="font-size:0.6rem;color:#10b981;margin-bottom:20px;">🔥 Streak: ${streak} jour${streak>1?'s':''}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:20px;">
+        ${DAILY_REWARDS.map((r, i) => {
+          let cls = 'upcoming';
+          if (i < dayIndex) cls = 'claimed';
+          else if (i === dayIndex) cls = 'today';
+          return `<div class="login-day ${cls}"><div style="font-size:1.2rem;">${i < dayIndex ? '✅' : (i === dayIndex ? '🎁' : '🔒')}</div><div style="color:#fbbf24;">Jour ${i+1}</div><div style="font-size:0.45rem;color:#9ca3af;">${r.reward.split(' ').slice(0,2).join(' ')}</div></div>`;
+        }).join('')}
+      </div>
+      <div style="background:rgba(251,191,36,0.1);border:2px solid #fbbf24;border-radius:12px;padding:15px;margin-bottom:20px;">
+        <div style="font-size:0.65rem;color:#9ca3af;margin-bottom:5px;">AUJOURD'HUI — Jour ${dayIndex+1}</div>
+        <div style="font-size:1rem;color:#fbbf24;">${todayReward.reward}</div>
+      </div>
+      ${claimed ? 
+        '<div style="color:#10b981;font-size:0.65rem;">✅ Déjà récupérée aujourd\'hui !</div>' :
+        '<button class="gold" style="width:100%;padding:15px;" onclick="claimDailyReward(this)">🎁 RÉCUPÉRER !</button>'
+      }
+      <button class="danger" style="width:100%;margin-top:10px;" onclick="document.getElementById('dailyRewardModal').remove()">✖ Fermer</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function claimDailyReward(btn) {
+  if (!player || player.dailyRewardClaimed) return;
+  const streak = player.loginStreak || 1;
+  const dayIndex = ((streak - 1) % 7);
+  DAILY_REWARDS[dayIndex].fn();
+  player.dailyRewardClaimed = true;
+  savePlayer();
+  if (btn) { btn.textContent = '✅ Récupérée !'; btn.disabled = true; }
+  const banner = document.getElementById('dailyLoginRewardBanner');
+  if (banner) banner.style.display = 'none';
+  const modal = document.getElementById('dailyRewardModal');
+  if (modal) setTimeout(() => modal.remove(), 800);
+}
+
+// --- 6. DAILY QUESTS ---
+const QUEST_TEMPLATES = [
+  { id: 'q1', desc: 'Réponds à 10 questions correctement', goal: 10, key: 'questionsAnswered', reward: '💰 100 Pièces', rewardFn: () => player.coins += 100 },
+  { id: 'q2', desc: 'Atteins un combo x5', goal: 5, key: 'maxCombo', reward: '⚡ 3 Boosts XP', rewardFn: () => player.inventory.xpBoost = (player.inventory.xpBoost||0)+3 },
+  { id: 'q3', desc: 'Dépense 0 indices (session)', goal: 1, key: 'noHintSession', reward: '💡 2 Indices', rewardFn: () => player.inventory.hints = (player.inventory.hints||0)+2 },
+  { id: 'q4', desc: 'Bats 3 niveaux boss', goal: 3, key: 'bossesDefeated', reward: '💰 200 Pièces', rewardFn: () => player.coins += 200 },
+  { id: 'q5', desc: 'Gagne 200 pièces en une session', goal: 200, key: 'sessionCoins', reward: '⏭️ 2 Passes', rewardFn: () => player.inventory.skips = (player.inventory.skips||0)+2 },
+];
+
+function getDailyQuests() {
+  if (!player) return [];
+  const today = new Date().toDateString();
+  if (!player.dailyQuests || player.dailyQuests.date !== today) {
+    // Assign 3 random quests for today (slice first to avoid mutating QUEST_TEMPLATES)
+    const shuffled = [...QUEST_TEMPLATES].sort(() => Math.random()-0.5).slice(0, 3);
+    player.dailyQuests = {
+      date: today,
+      quests: shuffled.map(q => ({ ...q, progress: 0, completed: false, claimed: false }))
+    };
+    savePlayer();
+  }
+  return player.dailyQuests.quests;
+}
+
+function updateQuestProgress(key, amount = 1) {
+  if (!player || !player.dailyQuests) return;
+  const today = new Date().toDateString();
+  if (player.dailyQuests.date !== today) return;
+  player.dailyQuests.quests.forEach(q => {
+    if (q.key === key && !q.completed) {
+      q.progress = Math.min(q.goal, (q.progress || 0) + amount);
+      if (q.progress >= q.goal) {
+        q.completed = true;
+        showQuestComplete(q);
+      }
+    }
+  });
+  renderQuestsPreview();
+}
+
+function showQuestComplete(quest) {
+  const el = document.getElementById('comboAnnouncement');
+  if (el) {
+    el.textContent = '📋 QUÊTE ACCOMPLIE !';
+    el.classList.remove('show');
+    void el.offsetWidth;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2000);
+  }
+}
+
+function renderQuestsPreview() {
+  const el = document.getElementById('questsPreview');
+  if (!el) return;
+  const quests = getDailyQuests();
+  const completed = quests.filter(q => q.completed).length;
+  el.innerHTML = `<div style="font-size:0.55rem;color:#9ca3af;margin-bottom:5px;">${completed}/${quests.length} complétées</div>` +
+    quests.map(q => `
+      <div class="quest-item">
+        <span>${q.completed ? '✅' : '🔸'}</span>
+        <span style="flex:1;">${q.desc}</span>
+        <div class="quest-progress-bar"><div class="quest-progress-fill" style="width:${Math.min(100,(q.progress||0)/q.goal*100)}%;"></div></div>
+        <span style="font-size:0.5rem;color:#fbbf24;">${q.progress||0}/${q.goal}</span>
+      </div>
+    `).join('');
+}
+
+function openQuestsModal() {
+  const quests = getDailyQuests();
+  const overlay = document.createElement('div');
+  overlay.id = 'questsModal';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:20000;overflow-y:auto;padding:20px;';
+  overlay.innerHTML = `
+    <div style="max-width:500px;margin:0 auto;background:#1a1a2e;border:3px solid #10b981;border-radius:20px;padding:25px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h2 style="color:#10b981;font-size:0.9rem;">📋 QUÊTES DU JOUR</h2>
+        <button class="danger" onclick="document.getElementById('questsModal').remove()">✖</button>
+      </div>
+      ${quests.map(q => `
+        <div style="background:rgba(0,0,0,0.4);border:2px solid ${q.completed?'#10b981':'rgba(255,255,255,0.1)'};border-radius:12px;padding:15px;margin:10px 0;">
+          <div style="font-size:0.65rem;color:#fbbf24;margin-bottom:8px;">${q.completed?'✅':q.claimed?'📦':'🔸'} ${q.desc}</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="quest-progress-bar" style="flex:1;"><div class="quest-progress-fill" style="width:${Math.min(100,(q.progress||0)/q.goal*100)}%;"></div></div>
+            <span style="font-size:0.55rem;color:#9ca3af;">${q.progress||0}/${q.goal}</span>
+          </div>
+          <div style="font-size:0.55rem;color:#10b981;margin-top:8px;">🏆 Récompense: ${q.reward}</div>
+          ${q.completed && !q.claimed ? `<button class="gold" style="width:100%;margin-top:10px;padding:10px;" onclick="claimQuestReward('${q.id}', this)">🎁 Récupérer</button>` : ''}
+        </div>
+      `).join('')}
+      <button class="primary" style="width:100%;margin-top:15px;" onclick="document.getElementById('questsModal').remove()">✅ Fermer</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function claimQuestReward(questId, btn) {
+  if (!player || !player.dailyQuests) return;
+  const quest = player.dailyQuests.quests.find(q => q.id === questId);
+  if (!quest || !quest.completed || quest.claimed) return;
+  const template = QUEST_TEMPLATES.find(t => t.id === questId);
+  if (template && template.rewardFn) template.rewardFn();
+  quest.claimed = true;
+  savePlayer();
+  // Update button state before re-rendering
+  if (btn) { btn.textContent = '✅ Récupérée !'; btn.disabled = true; }
+  // Refresh quest preview on home screen if visible
+  renderQuestsPreview();
+}
+
+// --- 7. LEAGUE SYSTEM ---
+function getLeague(maxLevel) {
+  if (maxLevel >= 5000) return { name: 'Diamant', emoji: '💎', class: 'league-diamond' };
+  if (maxLevel >= 2000) return { name: 'Or', emoji: '🥇', class: 'league-gold' };
+  if (maxLevel >= 500) return { name: 'Argent', emoji: '🥈', class: 'league-silver' };
+  return { name: 'Bronze', emoji: '🥉', class: 'league-bronze' };
+}
+
+// --- 8. TALENT TREE ---
+const TALENTS = [
+  { id: 't1', name: 'Économe', emoji: '💰', desc: '+10% pièces', cost: 100, requires: null, effect: 'coinBonus' },
+  { id: 't2', name: 'Studieux', emoji: '📚', desc: '+10% XP', cost: 100, requires: null, effect: 'xpBonus' },
+  { id: 't3', name: 'Endurant', emoji: '❤️', desc: '+1 vie max', cost: 200, requires: 't1', effect: 'extraLife' },
+  { id: 't4', name: 'Rapide', emoji: '⚡', desc: '+5s timer bonus', cost: 200, requires: 't2', effect: 'timeBonus' },
+  { id: 't5', name: 'Chanceux', emoji: '🍀', desc: '+15% drop rate', cost: 300, requires: 't3', effect: 'dropBonus' },
+  { id: 't6', name: 'Combo Master', emoji: '🔥', desc: 'Combo reste 15s', cost: 300, requires: 't4', effect: 'comboExtend' },
+  { id: 't7', name: 'Trésorier', emoji: '👑', desc: '+25% toutes pièces', cost: 500, requires: 't5', effect: 'megaCoinBonus' },
+  { id: 't8', name: 'Légende', emoji: '🌟', desc: 'x2 XP toujours', cost: 500, requires: 't6', effect: 'megaXPBonus' },
+];
+
+function openTalentTree() {
+  if (!player) return;
+  if (!player.talents) player.talents = [];
+  const talentPoints = player.talentPoints || 0;
+  
+  const overlay = document.createElement('div');
+  overlay.id = 'talentModal';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:20000;overflow-y:auto;padding:20px;';
+  overlay.innerHTML = `
+    <div style="max-width:600px;margin:0 auto;background:#1a1a2e;border:3px solid #f59e0b;border-radius:20px;padding:25px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <h2 style="color:#f59e0b;font-size:0.85rem;">🌳 ARBRE DE TALENTS</h2>
+        <button class="danger" onclick="document.getElementById('talentModal').remove()">✖</button>
+      </div>
+      <div style="text-align:center;font-size:0.6rem;color:#fbbf24;margin-bottom:20px;">
+        ✨ Points disponibles: <span id="talentPointsDisplay">${talentPoints}</span>
+        <br><span style="color:#9ca3af;font-size:0.5rem;">Gagne 1 point tous les 10 niveaux joueur</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:15px;justify-content:center;">
+        ${TALENTS.map(t => {
+          const unlocked = player.talents.includes(t.id);
+          const reqOk = !t.requires || player.talents.includes(t.requires);
+          const canUnlock = !unlocked && reqOk && talentPoints >= 1;
+          let cls = unlocked ? 'unlocked' : (canUnlock ? 'available' : 'locked');
+          const onclickAttr = canUnlock ? ('onclick="unlockTalent(' + "'" + t.id + "'" + ')"') : '';
+          const statusBadge = unlocked ? '<span style="font-size:0.4rem;color:#10b981;">✅</span>' : (canUnlock ? '<span style="font-size:0.4rem;color:#f59e0b;">1pt</span>' : '');
+          return '<div class="talent-node ' + cls + '" ' + onclickAttr + '>'
+            + '<span style="font-size:1.5rem;">' + t.emoji + '</span>'
+            + '<span style="font-size:0.45rem;color:#fbbf24;">' + t.name + '</span>'
+            + '<span style="font-size:0.4rem;color:#9ca3af;">' + t.desc + '</span>'
+            + statusBadge
+            + '</div>';
+        }).join('')}
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function unlockTalent(id) {
+  if (!player || !player.talents) player.talents = [];
+  if (player.talents.includes(id)) return;
+  if ((player.talentPoints || 0) < 1) { alert('Pas assez de points de talent !'); return; }
+  const talent = TALENTS.find(t => t.id === id);
+  if (talent.requires && !player.talents.includes(talent.requires)) { alert('Débloque le talent précédent d\'abord !'); return; }
+  player.talents.push(id);
+  player.talentPoints = (player.talentPoints || 0) - 1;
+  savePlayer();
+  // Reopen to refresh
+  const existingModal = document.getElementById('talentModal');
+  if (existingModal) existingModal.remove();
+  openTalentTree();
+  // Small notification instead of blocking alert
+  const ann = document.getElementById('comboAnnouncement');
+  if (ann) { ann.textContent = '🌳 ' + talent.name + ' débloqué!'; ann.classList.remove('show'); void ann.offsetWidth; ann.classList.add('show'); setTimeout(() => ann.classList.remove('show'), 2000); }
+}
+
+function checkTalentPoints() {
+  if (!player) return;
+  const expectedPoints = Math.floor(player.level / 10);
+  const usedPoints = (player.talents || []).length;
+  const currentPoints = player.talentPoints || 0;
+  if (expectedPoints > usedPoints + currentPoints) {
+    player.talentPoints = expectedPoints - usedPoints;
+  }
+}
+
+// --- 9. RANDOM EVENTS ---
+const EVENTS = [
+  { id: 'coinStorm', name: '🌧️ Pluie de Pièces!', desc: 'x2 pièces pendant 5 minutes!', color: '#fbbf24', duration: 5 * 60 * 1000 },
+  { id: 'xpRush', name: '⚡ Rush XP!', desc: 'x3 XP pendant 3 minutes!', color: '#8b5cf6', duration: 3 * 60 * 1000 },
+  { id: 'bossInvasion', name: '👹 Invasion de Boss!', desc: 'x5 récompenses sur les boss pendant 10 min!', color: '#ef4444', duration: 10 * 60 * 1000 },
+];
+let activeEvent = null;
+let eventEndTime = null;
+
+function triggerRandomEvent() {
+  if (activeEvent) return;
+  const event = EVENTS[Math.floor(Math.random() * EVENTS.length)];
+  activeEvent = event;
+  eventEndTime = Date.now() + event.duration;
+  // Update banner if visible (only on homeScreen)
+  const banner = document.getElementById('eventBanner');
+  if (banner) {
+    banner.style.display = 'block';
+    banner.innerHTML = `🚨 ÉVÉNEMENT: ${event.name}<br><span style="font-size:0.5rem;">${event.desc} — <span id="eventTimer"></span></span>`;
+  }
+  updateEventTimer();
+}
+
+function refreshEventBanner() {
+  if (!activeEvent || Date.now() > eventEndTime) return;
+  const banner = document.getElementById('eventBanner');
+  if (banner) {
+    banner.style.display = 'block';
+    banner.innerHTML = `🚨 ÉVÉNEMENT: ${activeEvent.name}<br><span style="font-size:0.5rem;">${activeEvent.desc} — <span id="eventTimer"></span></span>`;
+    updateEventTimer();
+  }
+}
+
+function updateEventTimer() {
+  if (!activeEvent || !eventEndTime) return;
+  const remaining = eventEndTime - Date.now();
+  if (remaining <= 0) {
+    activeEvent = null;
+    const banner = document.getElementById('eventBanner');
+    if (banner) banner.style.display = 'none';
+    return;
+  }
+  const mins = Math.floor(remaining / 60000);
+  const secs = Math.floor((remaining % 60000) / 1000);
+  const el = document.getElementById('eventTimer');
+  if (el) el.textContent = `${mins}m ${secs}s restant`;
+  setTimeout(updateEventTimer, 1000);
+}
+
+function getEventMultiplier(type) {
+  if (!activeEvent || Date.now() > eventEndTime) return 1;
+  if (activeEvent.id === 'coinStorm' && type === 'coins') return 2;
+  if (activeEvent.id === 'xpRush' && type === 'xp') return 3;
+  if (activeEvent.id === 'bossInvasion' && type === 'boss') return 5;
+  return 1;
+}
+
+function showEventDetails() {
+  if (!activeEvent) return;
+  alert(`🚨 ÉVÉNEMENT ACTIF: ${activeEvent.name}\n${activeEvent.desc}`);
+}
+
+// Trigger random event every 20-40 minutes
+function scheduleRandomEvent() {
+  const delay = (20 + Math.random() * 20) * 60 * 1000;
+  setTimeout(() => {
+    if (player) triggerRandomEvent();
+    scheduleRandomEvent();
+  }, delay);
+}
+
+// --- 10. PRESTIGE SYSTEM ---
+function canPrestige() {
+  return player && player.maxLevel >= 10000;
+}
+
+function openPrestigeModal() {
+  if (!canPrestige()) { alert('Atteins le niveau 10 000 pour prestige !'); return; }
+  const overlay = document.createElement('div');
+  overlay.id = 'prestigeModal';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:20000;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `
+    <div style="background:#1a1a2e;border:4px solid #fbbf24;border-radius:20px;padding:30px;text-align:center;max-width:400px;">
+      <div style="font-size:2rem;">⭐</div>
+      <h2 style="color:#fbbf24;margin:10px 0;font-size:0.9rem;">PRESTIGE!</h2>
+      <p style="font-size:0.6rem;color:#9ca3af;margin:15px 0;">Recommence depuis 0 avec un badge Prestige et des bonus permanents !</p>
+      <p style="font-size:0.65rem;color:#10b981;margin:10px 0;">✅ Tu gardes: Badges, Talents, Pièces (50%)</p>
+      <p style="font-size:0.65rem;color:#ef4444;margin:10px 0;">❌ Reset: Niveau carte, XP, Niveau joueur</p>
+      <p style="font-size:0.7rem;color:#fbbf24;margin:15px 0;">🎁 Bonus: +50% pièces permanent!</p>
+      <button class="gold" style="width:100%;padding:15px;margin:5px 0;" onclick="doPrestige(this)">⭐ PRESTIGE!</button>
+      <button class="danger" style="width:100%;padding:10px;" onclick="document.getElementById('prestigeModal').remove()">Annuler</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function doPrestige(btn) {
+  if (!confirm('⚠️ Confirmes-tu le prestige ? Toute ta progression de carte sera réinitialisée !')) return;
+  const prestigeLevel = (player.prestigeLevel || 0) + 1;
+  const keptCoins = Math.floor(player.coins / 2);
+  const keptBadges = [...(player.badges || [])];
+  const keptTalents = [...(player.talents || [])];
+  const keptTalentPoints = player.talentPoints || 0;
+  
+  player.prestigeLevel = prestigeLevel;
+  player.coins = keptCoins;
+  player.badges = keptBadges;
+  player.badges.push(`⭐ Prestige ${prestigeLevel}`);
+  player.talents = keptTalents;
+  player.talentPoints = keptTalentPoints + 5;
+  player.level = 1;
+  player.xp = 0;
+  player.maxLevel = 1;
+  player.inventory = { hints: 0, skips: 0, secondChances: 0, xpBoost: 0 };
+  player.stats = { questionsAnswered: 0, bossesDefeated: 0 };
+  
+  savePlayer();
+  document.querySelector('div[style*="z-index:20000"]')?.remove();
+  showScreen('homeScreen');
+  updateHomeScreen();
+  alert(`🌟 PRESTIGE ${prestigeLevel} ACTIVÉ ! Tu as gardé ${keptCoins} pièces et reçu 5 points de talent bonus !`);
+}
+
+// ========================================
+// ⚔️ SYSTÈME MULTIJOUEUR — Firebase Realtime
+// ========================================
+// Structure Firebase :
+//  /rooms/{roomId}  → salon de jeu
+//  /rooms/{roomId}/players/{uid} → données joueur dans le salon
+//  /presence/{uid} → présence en ligne
+//  /challenges/{toUid}/{challengeId} → demandes de défi
+
+const DUEL_QUESTIONS_COUNT = 10;
+const DUEL_QUESTION_TIME = 20; // secondes par question
+const DUEL_WIN_COINS = 150;
+const DUEL_LOSE_COINS = 30;
+const DUEL_WIN_XP = 200;
+const DUEL_LOSE_XP = 50;
+
+let currentRoomId = null;
+let currentRoomRef = null;
+let duelQuestions = [];
+let duelCurrentQ = 0;
+let duelMyScore = 0;
+let duelOppScore = 0;
+let duelMyCorrect = 0;
+let duelOppCorrect = 0;
+let duelTimer = null;
+let duelTimeLeft = DUEL_QUESTION_TIME;
+let duelAnswered = false;
+let duelOppUid = null;
+let duelOppName = '';
+let duelIsHost = false;
+let roomListener = null;
+let presenceInterval = null;
+let challengeListener = null;
+let mpCurrentTab = 'rooms';
+
+// ── Présence en ligne ──────────────────────────────────────────
+function startPresence() {
+  if (!firebaseReady || !currentUserId || currentUserId === 'admin' || currentUserId.startsWith('local_')) return;
+  const ref = database.ref('presence/' + currentUserId);
+  ref.set({ username: player.username, level: player.level || 1, maxLevel: player.maxLevel || 1, online: true, ts: Date.now() });
+  ref.onDisconnect().remove();
+  presenceInterval = setInterval(() => {
+    if (player) ref.update({ ts: Date.now(), level: player.level || 1 });
+  }, 30000);
+  listenForChallenges();
+}
+
+function stopPresence() {
+  if (presenceInterval) clearInterval(presenceInterval);
+  if (!firebaseReady || !currentUserId || currentUserId === 'admin' || currentUserId.startsWith('local_')) return;
+  database.ref('presence/' + currentUserId).remove();
+  if (challengeListener) { database.ref('challenges/' + currentUserId).off(); challengeListener = null; }
+}
+
+// ── Challenges entrants ────────────────────────────────────────
+function listenForChallenges() {
+  if (!firebaseReady || !currentUserId || currentUserId.startsWith('local_') || currentUserId === 'admin') return;
+  const ref = database.ref('challenges/' + currentUserId);
+  challengeListener = ref.on('child_added', snap => {
+    const challenge = snap.val();
+    if (!challenge) return;
+    snap.ref.remove(); // consomme le challenge
+    showChallengeNotif(challenge, snap.key);
+  });
+}
+
+function showChallengeNotif(challenge, challengeId) {
+  // Remove existing notifs
+  document.querySelectorAll('.challenge-notif').forEach(el => el.remove());
+  const notif = document.createElement('div');
+  notif.className = 'challenge-notif';
+  notif.innerHTML = `
+    <div style="font-size:0.6rem;color:#fbbf24;margin-bottom:8px;">⚔️ DÉFI REÇU !</div>
+    <div style="font-size:0.65rem;margin-bottom:12px;">${challenge.fromName} te défie en duel !</div>
+    <div style="display:flex;gap:8px;">
+      <button class="primary" style="flex:1;padding:8px;font-size:0.55rem;" onclick="acceptChallenge('${challenge.roomId}'); this.closest('.challenge-notif').remove();">✅ Accepter</button>
+      <button class="danger" style="flex:1;padding:8px;font-size:0.55rem;" onclick="this.closest('.challenge-notif').remove();">❌ Refuser</button>
+    </div>
+  `;
+  document.body.appendChild(notif);
+  setTimeout(() => notif.remove(), 15000);
+}
+
+// ── Initialisation écran multi ─────────────────────────────────
+function initMultiplayer() {
+  if (!firebaseReady || !currentUserId || currentUserId.startsWith('local_') || currentUserId === 'admin') {
+    document.getElementById('mpFirebaseWarning').style.display = 'block';
+    document.getElementById('mpRoomsList').innerHTML = '';
+    document.getElementById('mpOnlineList').innerHTML = '';
+    return;
+  }
+  document.getElementById('mpFirebaseWarning').style.display = 'none';
+  switchMpTab(mpCurrentTab);
+  startPresence();
+}
+
+function switchMpTab(tab) {
+  mpCurrentTab = tab;
+  ['rooms','challenge','history'].forEach(t => {
+    document.getElementById('mpTab' + t.charAt(0).toUpperCase() + t.slice(1)).className = t === tab ? 'primary' : '';
+    document.getElementById('mpTab' + t.charAt(0).toUpperCase() + t.slice(1) + 'Content').style.display = t === tab ? 'block' : 'none';
+  });
+  if (tab === 'rooms') refreshRooms();
+  else if (tab === 'challenge') refreshOnlinePlayers();
+  else if (tab === 'history') renderDuelHistory();
+}
+
+// ── Salons ─────────────────────────────────────────────────────
+async function refreshRooms() {
+  const el = document.getElementById('mpRoomsList');
+  if (!firebaseReady) { el.innerHTML = '<div style="text-align:center;color:#9ca3af;font-size:0.6rem;padding:20px;">Firebase requis</div>'; return; }
+  el.innerHTML = '<div style="text-align:center;color:#9ca3af;font-size:0.6rem;padding:20px;">⏳ Chargement...</div>';
+  try {
+    const snap = await database.ref('rooms').orderByChild('status').equalTo('waiting').limitToLast(20).once('value');
+    const data = snap.val() || {};
+    const rooms = Object.entries(data).filter(([, r]) => r.hostName && Date.now() - (r.createdAt || 0) < 5 * 60 * 1000);
+    if (rooms.length === 0) {
+      el.innerHTML = '<div style="text-align:center;color:#9ca3af;font-size:0.6rem;padding:30px;">😴 Aucun salon ouvert<br><br>Crée-en un !</div>';
+      return;
+    }
+    el.innerHTML = rooms.map(([roomId, room]) => `
+      <div class="room-card" onclick="joinRoom('${roomId}')">
+        <div>
+          <div style="font-size:0.65rem;color:#fbbf24;">${room.hostName}</div>
+          <div style="font-size:0.5rem;color:#9ca3af;">Niv. ${room.hostLevel || 1} • ${DUEL_QUESTIONS_COUNT} questions</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="room-status"><div class="status-dot open"></div><span style="color:#10b981;">OUVERT</span></div>
+          <div style="font-size:0.45rem;color:#9ca3af;">1/2 joueurs</div>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) { el.innerHTML = `<div style="color:#ef4444;font-size:0.6rem;text-align:center;padding:20px;">Erreur: ${e.message}</div>`; }
+}
+
+async function createRoom() {
+  if (!firebaseReady || !player) return;
+  if (currentRoomId) { alert('Tu es déjà dans un salon !'); return; }
+
+  const questions = generateDuelQuestions();
+  const roomId = database.ref('rooms').push().key;
+  const roomData = {
+    hostUid: currentUserId,
+    hostName: player.username,
+    hostLevel: player.level || 1,
+    status: 'waiting',
+    createdAt: Date.now(),
+    questions: questions,
+    players: {
+      [currentUserId]: { name: player.username, level: player.level || 1, score: 0, correct: 0, ready: false }
+    }
+  };
+
+  await database.ref('rooms/' + roomId).set(roomData);
+  currentRoomId = roomId;
+  duelIsHost = true;
+  openRoomLobby(roomId, roomData.questions);
+}
+
+async function joinRoom(roomId) {
+  if (!firebaseReady || !player) return;
+  if (currentRoomId) { leaveMpLobby(); }
+
+  const snap = await database.ref('rooms/' + roomId).once('value');
+  const room = snap.val();
+  if (!room || room.status !== 'waiting') { alert('Ce salon n\'est plus disponible !'); refreshRooms(); return; }
+  if (room.hostUid === currentUserId) { openRoomLobby(roomId, room.questions); return; }
+
+  await database.ref(`rooms/${roomId}/players/${currentUserId}`).set({
+    name: player.username, level: player.level || 1, score: 0, correct: 0, ready: false
+  });
+  await database.ref(`rooms/${roomId}/status`).set('ready');
+
+  currentRoomId = roomId;
+  duelIsHost = false;
+  duelOppUid = room.hostUid;
+  duelOppName = room.hostName;
+  startDuel(roomId, room.questions);
+}
+
+async function acceptChallenge(roomId) {
+  await joinRoom(roomId);
+}
+
+// ── Lobby d'attente ────────────────────────────────────────────
+function openRoomLobby(roomId, questions) {
+  // Show waiting overlay
+  const overlay = document.createElement('div');
+  overlay.id = 'lobbyOverlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.92);z-index:18000;display:flex;align-items:center;justify-content:center;';
+  overlay.innerHTML = `
+    <div style="background:#1a1a2e;border:3px solid #6366f1;border-radius:20px;padding:30px;text-align:center;max-width:400px;width:90%;">
+      <div style="font-size:2rem;margin-bottom:10px;">⚔️</div>
+      <h2 style="color:#818cf8;font-size:0.85rem;margin-bottom:5px;">SALON D'ATTENTE</h2>
+      <div style="font-size:0.55rem;color:#9ca3af;margin-bottom:20px;">Partage ce code : <span style="color:#fbbf24;">${roomId.slice(-6).toUpperCase()}</span></div>
+      <div class="pvp-player-card ready" style="justify-content:center;">
+        <span style="font-size:1.2rem;">👤</span>
+        <span style="font-size:0.65rem;color:#fbbf24;">${player.username}</span>
+        <span style="font-size:0.55rem;color:#10b981;margin-left:auto;">✅ Prêt</span>
+      </div>
+      <div class="pvp-player-card waiting" id="lobbyOppCard" style="justify-content:center;">
+        <span style="font-size:1.2rem;">⏳</span>
+        <span style="font-size:0.65rem;color:#9ca3af;">En attente d'un adversaire...</span>
+      </div>
+      <div style="margin-top:20px;font-size:0.55rem;color:#9ca3af;">
+        <div class="dot-bounce" style="justify-content:center;margin-bottom:8px;"><span></span><span></span><span></span></div>
+        Partage le lien du jeu pour inviter un ami !
+      </div>
+      <button class="danger" style="width:100%;margin-top:20px;" onclick="leaveMpLobby(); document.getElementById('lobbyOverlay')?.remove();">✖ Annuler</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  // Listen for opponent joining
+  currentRoomRef = database.ref('rooms/' + roomId);
+  roomListener = currentRoomRef.on('value', snap => {
+    const room = snap.val();
+    if (!room) return;
+    if (room.status === 'ready') {
+      // Opponent joined!
+      const players = Object.entries(room.players || {});
+      const opp = players.find(([uid]) => uid !== currentUserId);
+      if (opp) {
+        duelOppUid = opp[0];
+        duelOppName = opp[1].name;
+        const oppCard = document.getElementById('lobbyOppCard');
+        if (oppCard) {
+          oppCard.className = 'pvp-player-card ready';
+          oppCard.innerHTML = `<span style="font-size:1.2rem;">👤</span><span style="font-size:0.65rem;color:#fbbf24;">${duelOppName}</span><span style="font-size:0.55rem;color:#10b981;margin-left:auto;">✅ Prêt</span>`;
+        }
+        setTimeout(() => {
+          document.getElementById('lobbyOverlay')?.remove();
+          startDuel(roomId, room.questions);
+        }, 1000);
+      }
+    }
+  });
+}
+
+// ── Génération de questions duel ───────────────────────────────
+function generateDuelQuestions() {
+  const qs = [];
+  const baseLevel = Math.max(1, (player.maxLevel || 1) - 20);
+  for (let i = 0; i < DUEL_QUESTIONS_COUNT; i++) {
+    const level = baseLevel + Math.floor(Math.random() * 30);
+    qs.push(getQuestionForLevel(level, false));
+  }
+  return qs;
+}
+
+// ── Démarrer le duel ──────────────────────────────────────────
+function startDuel(roomId, questions) {
+  duelQuestions = questions;
+  duelCurrentQ = 0;
+  duelMyScore = 0;
+  duelOppScore = 0;
+  duelMyCorrect = 0;
+  duelOppCorrect = 0;
+  currentRoomId = roomId;
+
+  showScreen('duelScreen');
+  updateDuelHUD();
+
+  // Listen to room for opponent's answers
+  if (roomListener) { database.ref('rooms/' + currentRoomId).off('value', roomListener); roomListener = null; }
+  currentRoomRef = database.ref('rooms/' + currentRoomId);
+  roomListener = currentRoomRef.child('players/' + duelOppUid).on('value', snap => {
+    const opp = snap.val();
+    if (!opp) return;
+    duelOppScore = opp.score || 0;
+    duelOppCorrect = opp.correct || 0;
+    updateDuelHUD();
+    // Opponent answered this round
+    if (opp.lastAnsweredQ === duelCurrentQ && !duelAnswered) {
+      showOppAnswered(opp.lastCorrect);
+    }
+    // Check if duel ended
+    if (opp.finished && player._duelFinished) {
+      endDuel();
+    }
+  });
+
+  showDuelQuestion();
+}
+
+function updateDuelHUD() {
+  const myName = document.getElementById('duelMyName');
+  const myScore = document.getElementById('duelMyScore');
+  const myCorrect = document.getElementById('duelMyCorrect');
+  const oppName = document.getElementById('duelOppName');
+  const oppScore = document.getElementById('duelOppScore');
+  const oppCorrect = document.getElementById('duelOppCorrect');
+  if (myName) myName.textContent = player?.username || '-';
+  if (myScore) myScore.textContent = duelMyScore;
+  if (myCorrect) myCorrect.textContent = duelMyCorrect + ' corrects';
+  if (oppName) oppName.textContent = duelOppName || 'Adversaire';
+  if (oppScore) oppScore.textContent = duelOppScore;
+  if (oppCorrect) oppCorrect.textContent = duelOppCorrect + ' corrects';
+  // Color my score vs opponent's
+  if (myScore) myScore.style.color = duelMyScore >= duelOppScore ? '#10b981' : '#ef4444';
+  if (oppScore) oppScore.style.color = duelOppScore > duelMyScore ? '#10b981' : '#ef4444';
+}
+
+// ── Afficher question duel ─────────────────────────────────────
+function showDuelQuestion() {
+  if (duelCurrentQ >= DUEL_QUESTIONS_COUNT) { finishMyDuel(); return; }
+  duelAnswered = false;
+
+  const q = duelQuestions[duelCurrentQ];
+  const roundEl = document.getElementById('duelRoundInfo');
+  const feedEl = document.getElementById('duelFeedback');
+  const submitBtn = document.getElementById('duelSubmitBtn');
+  if (roundEl) roundEl.textContent = `Q ${duelCurrentQ + 1}/${DUEL_QUESTIONS_COUNT}`;
+  if (feedEl) feedEl.innerHTML = '';
+  if (submitBtn) submitBtn.disabled = false;
+
+  // Biome
+  const biome = getBiome(Math.max(1, player.maxLevel || 1));
+  const biomeEl = document.getElementById('duelBiome');
+  if (biomeEl) biomeEl.textContent = `${biome.emoji} ${biome.name}`;
+
+  document.getElementById('duelQuestion').textContent = q.question;
+  document.getElementById('duelOppStatus').style.display = 'flex';
+
+  // QCM or text
+  if (q.type === 'qcm' && q.choices) {
+    document.getElementById('duelChoices').style.display = 'flex';
+    document.getElementById('duelTextGroup').style.display = 'none';
+    const choicesEl = document.getElementById('duelChoices');
+    choicesEl.innerHTML = '';
+    q.choices.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.textContent = c;
+      btn.onclick = () => { selectDuelChoice(c, btn); };
+      choicesEl.appendChild(btn);
+    });
+  } else {
+    document.getElementById('duelChoices').style.display = 'none';
+    document.getElementById('duelTextGroup').style.display = 'block';
+    const inp = document.getElementById('duelAnswerInput');
+    inp.value = '';
+    inp.focus();
+  }
+
+  // Start timer
+  startDuelTimer();
+}
+
+let duelSelectedChoice = null;
+
+function selectDuelChoice(val, btn) {
+  document.querySelectorAll('#duelChoices .choice-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  duelSelectedChoice = val;
+  setTimeout(() => submitDuelAnswer(), 400);
+}
+
+// ── Timer duel ────────────────────────────────────────────────
+function startDuelTimer() {
+  clearInterval(duelTimer);
+  duelTimeLeft = DUEL_QUESTION_TIME;
+  updateDuelTimerDisplay();
+  duelTimer = setInterval(() => {
+    duelTimeLeft--;
+    updateDuelTimerDisplay();
+    if (duelTimeLeft <= 0) {
+      clearInterval(duelTimer);
+      if (!duelAnswered) submitDuelAnswer(true); // time out
+    }
+  }, 1000);
+}
+
+function updateDuelTimerDisplay() {
+  const numEl = document.getElementById('duelTimerNum');
+  const circleEl = document.getElementById('duelTimerCircle');
+  if (numEl) numEl.textContent = Math.max(0, duelTimeLeft);
+  if (circleEl) {
+    const circumference = 163;
+    const offset = circumference * (1 - duelTimeLeft / DUEL_QUESTION_TIME);
+    circleEl.style.strokeDashoffset = offset;
+    circleEl.style.stroke = duelTimeLeft <= 5 ? '#ef4444' : duelTimeLeft <= 10 ? '#f59e0b' : '#10b981';
+  }
+}
+
+// ── Soumettre réponse duel ────────────────────────────────────
+async function submitDuelAnswer(timedOut = false) {
+  if (duelAnswered) return;
+  duelAnswered = true;
+  clearInterval(duelTimer);
+
+  const q = duelQuestions[duelCurrentQ];
+  const submitBtn = document.getElementById('duelSubmitBtn');
+  if (submitBtn) submitBtn.disabled = true;
+
+  let userAnswer = '';
+  if (q.type === 'qcm') {
+    userAnswer = duelSelectedChoice || '';
+  } else {
+    userAnswer = document.getElementById('duelAnswerInput').value.trim();
+  }
+  duelSelectedChoice = null;
+
+  const isCorrect = !timedOut && normalizeText(userAnswer) === normalizeText(q.answer);
+  const timeBonus = isCorrect ? Math.max(0, Math.floor(duelTimeLeft / 4)) : 0;
+  const points = isCorrect ? (10 + timeBonus) : 0;
+
+  if (isCorrect) {
+    duelMyScore += points;
+    duelMyCorrect++;
+    playCorrectSound();
+    spawnParticles(window.innerWidth / 2, window.innerHeight / 2, 'correct');
+    document.getElementById('duelFeedback').innerHTML = `<div style="color:#10b981;font-size:1rem;">✅ CORRECT ! +${points} pts</div>${timeBonus > 0 ? `<div style="font-size:0.55rem;color:#fbbf24;">⚡ Bonus rapidité: +${timeBonus}</div>` : ''}`;
+  } else {
+    playWrongSound();
+    document.getElementById('duelFeedback').innerHTML = timedOut
+      ? `<div style="color:#f59e0b;">⏰ Temps écoulé !</div><div style="font-size:0.6rem;color:#9ca3af;">Réponse: ${q.answer}</div>`
+      : `<div style="color:#ef4444;">❌ Incorrect !</div><div style="font-size:0.6rem;color:#9ca3af;">Réponse: ${q.answer}</div>`;
+  }
+
+  updateDuelHUD();
+
+  // Push my result to Firebase so opponent can see
+  if (firebaseReady && currentRoomId) {
+    try {
+      await database.ref(`rooms/${currentRoomId}/players/${currentUserId}`).update({
+        score: duelMyScore,
+        correct: duelMyCorrect,
+        lastAnsweredQ: duelCurrentQ,
+        lastCorrect: isCorrect
+      });
+    } catch(e) {}
+  }
+
+  setTimeout(() => {
+    duelCurrentQ++;
+    if (duelCurrentQ >= DUEL_QUESTIONS_COUNT) {
+      finishMyDuel();
+    } else {
+      showDuelQuestion();
+    }
+  }, 2000);
+}
+
+function showOppAnswered(correct) {
+  const el = document.getElementById('duelOppStatus');
+  if (!el) return;
+  el.innerHTML = correct
+    ? `<span style="color:#10b981;">✅ ${duelOppName} a répondu !</span>`
+    : `<span style="color:#ef4444;">❌ ${duelOppName} a répondu !</span>`;
+  setTimeout(() => {
+    if (el) el.innerHTML = `<span>L'adversaire réfléchit</span><div class="dot-bounce"><span></span><span></span><span></span></div>`;
+  }, 1500);
+}
+
+// ── Fin de duel ───────────────────────────────────────────────
+async function finishMyDuel() {
+  player._duelFinished = true;
+  clearInterval(duelTimer);
+
+  if (firebaseReady && currentRoomId) {
+    try {
+      await database.ref(`rooms/${currentRoomId}/players/${currentUserId}`).update({
+        score: duelMyScore, correct: duelMyCorrect, finished: true
+      });
+      await database.ref(`rooms/${currentRoomId}/status`).set('finished');
+    } catch(e) {}
+  }
+
+  // Wait up to 8 seconds for opponent to finish
+  let waited = 0;
+  const waitInterval = setInterval(async () => {
+    waited += 500;
+    if (waited >= 8000) { clearInterval(waitInterval); endDuel(); return; }
+    try {
+      const snap = await database.ref(`rooms/${currentRoomId}/players/${duelOppUid}`).once('value');
+      if (snap.val()?.finished) { clearInterval(waitInterval); endDuel(); }
+    } catch(e) { clearInterval(waitInterval); endDuel(); }
+  }, 500);
+}
+
+function endDuel() {
+  if (roomListener) { database.ref('rooms/' + currentRoomId).off(); roomListener = null; }
+  const iWon = duelMyScore > duelOppScore;
+  const isDraw = duelMyScore === duelOppScore;
+
+  // Rewards
+  let coinsGain = iWon ? DUEL_WIN_COINS : (isDraw ? 80 : DUEL_LOSE_COINS);
+  let xpGain = iWon ? DUEL_WIN_XP : (isDraw ? 100 : DUEL_LOSE_XP);
+  player.coins += coinsGain;
+  player.xp += xpGain;
+  if (!player.stats) player.stats = {};
+  player.stats.questionsAnswered = (player.stats.questionsAnswered || 0) + duelMyCorrect;
+  if (!player.duelStats) player.duelStats = { wins: 0, losses: 0, draws: 0 };
+  if (iWon) player.duelStats.wins++;
+  else if (isDraw) player.duelStats.draws++;
+  else player.duelStats.losses++;
+
+  // Save duel history
+  if (!player.duelHistory) player.duelHistory = [];
+  player.duelHistory.unshift({
+    date: new Date().toLocaleDateString('fr-FR'),
+    opp: duelOppName,
+    myScore: duelMyScore,
+    oppScore: duelOppScore,
+    result: iWon ? 'win' : isDraw ? 'draw' : 'loss',
+    coinsGain, xpGain
+  });
+  player.duelHistory = player.duelHistory.slice(0, 20); // Garder 20
+
+  // Check level up
+  const xpNeeded = player.level * 100;
+  if (player.xp >= xpNeeded) { player.level++; player.xp -= xpNeeded; checkBadges(); }
+
+  player._duelFinished = false;
+  savePlayer();
+
+  // Clean up room (host only)
+  if (duelIsHost && firebaseReady && currentRoomId) {
+    setTimeout(() => database.ref('rooms/' + currentRoomId).remove().catch(()=>{}), 5000);
+  }
+  currentRoomId = null;
+
+  showDuelResult(iWon, isDraw, coinsGain, xpGain);
+
+  // Win confetti
+  if (iWon) spawnConfetti();
+
+  // Update quests
+  updateQuestProgress('questionsAnswered', duelMyCorrect);
+}
+
+function showDuelResult(iWon, isDraw, coinsGain, xpGain) {
+  const titleEl = document.getElementById('duelResultTitle');
+  const cardsEl = document.getElementById('duelResultCards');
+  const rewardsEl = document.getElementById('duelRewardsBox');
+
+  if (titleEl) {
+    titleEl.textContent = iWon ? '🏆 VICTOIRE !' : isDraw ? '🤝 ÉGALITÉ !' : '💀 DÉFAITE !';
+    titleEl.style.color = iWon ? '#fbbf24' : isDraw ? '#818cf8' : '#ef4444';
+  }
+
+  const maxScore = Math.max(duelMyScore, duelOppScore, 1);
+  const myPct = Math.round(duelMyScore / maxScore * 100);
+  const oppPct = Math.round(duelOppScore / maxScore * 100);
+
+  if (cardsEl) cardsEl.innerHTML = `
+    <div class="pvp-player-card ${iWon ? 'winner' : isDraw ? '' : 'loser'}">
+      <div class="pvp-info">
+        <div class="pvp-name">👤 ${player.username} ${iWon ? '🏆' : isDraw ? '🤝' : ''}</div>
+        <div class="pvp-stats">${duelMyCorrect}/${DUEL_QUESTIONS_COUNT} correctes</div>
+        <div style="margin-top:6px;">
+          <div style="height:8px;background:rgba(0,0,0,0.4);border-radius:4px;overflow:hidden;width:100%;">
+            <div class="result-bar" style="background:${iWon?'#10b981':'#6366f1'};width:0%;" data-pct="${myPct}"></div>
+          </div>
+        </div>
+      </div>
+      <div class="pvp-score">${duelMyScore} pts</div>
+    </div>
+    <div class="vs-divider">VS</div>
+    <div class="pvp-player-card ${!iWon && !isDraw ? 'winner' : isDraw ? '' : 'loser'}">
+      <div class="pvp-info">
+        <div class="pvp-name">🤖 ${duelOppName} ${!iWon && !isDraw ? '🏆' : ''}</div>
+        <div class="pvp-stats">${duelOppCorrect}/${DUEL_QUESTIONS_COUNT} correctes</div>
+        <div style="margin-top:6px;">
+          <div style="height:8px;background:rgba(0,0,0,0.4);border-radius:4px;overflow:hidden;width:100%;">
+            <div class="result-bar" style="background:${!iWon && !isDraw?'#10b981':'#ef4444'};width:0%;" data-pct="${oppPct}"></div>
+          </div>
+        </div>
+      </div>
+      <div class="pvp-score">${duelOppScore} pts</div>
+    </div>
+    <div style="text-align:center;margin-top:10px;">
+      <div style="font-size:0.55rem;color:#9ca3af;">📊 Stats duel: ${player.duelStats.wins}V / ${player.duelStats.draws}N / ${player.duelStats.losses}D</div>
+    </div>
+  `;
+
+  if (rewardsEl) rewardsEl.innerHTML = `
+    <div style="font-size:0.65rem;color:#fbbf24;margin-bottom:8px;">🎁 RÉCOMPENSES</div>
+    <div>💰 +${coinsGain} pièces &nbsp;&nbsp; ✨ +${xpGain} XP</div>
+  `;
+
+  showScreen('duelResultScreen');
+
+  // Animate bars after render
+  setTimeout(() => {
+    document.querySelectorAll('.result-bar[data-pct]').forEach(bar => {
+      bar.style.width = bar.dataset.pct + '%';
+    });
+  }, 200);
+}
+
+// ── Défier un joueur en ligne ──────────────────────────────────
+async function refreshOnlinePlayers() {
+  const el = document.getElementById('mpOnlineList');
+  if (!firebaseReady) { el.innerHTML = '<div style="color:#9ca3af;font-size:0.6rem;text-align:center;padding:20px;">Firebase requis</div>'; return; }
+  el.innerHTML = '<div style="color:#9ca3af;font-size:0.6rem;text-align:center;padding:20px;">⏳ Recherche...</div>';
+  try {
+    const snap = await database.ref('presence').once('value');
+    const data = snap.val() || {};
+    const now = Date.now();
+    const online = Object.entries(data).filter(([uid, p]) =>
+      uid !== currentUserId && p.online && (now - (p.ts || 0)) < 60000
+    );
+    if (online.length === 0) {
+      el.innerHTML = '<div style="color:#9ca3af;font-size:0.6rem;text-align:center;padding:30px;">😴 Aucun joueur en ligne actuellement<br><br>Reviens plus tard !</div>';
+      return;
+    }
+    el.innerHTML = online.map(([uid, p]) => `
+      <div class="pvp-player-card" style="margin:6px 0;">
+        <div class="pvp-info">
+          <div class="pvp-name">${p.username}</div>
+          <div class="pvp-stats">Niv. ${p.level || 1} • 🗺️ ${p.maxLevel || 1}</div>
+        </div>
+        <div class="status-dot online" style="width:10px;height:10px;background:#10b981;box-shadow:0 0 8px #10b981;border-radius:50%;flex-shrink:0;"></div>
+        <button class="primary" style="margin:0;padding:8px 12px;font-size:0.5rem;" onclick="challengePlayer('${uid}', '${p.username}')">⚔️ Défier</button>
+      </div>
+    `).join('');
+  } catch(e) { el.innerHTML = `<div style="color:#ef4444;font-size:0.6rem;">Erreur: ${e.message}</div>`; }
+}
+
+async function challengePlayer(targetUid, targetName) {
+  if (!player || !firebaseReady) return;
+  // Create room and send challenge
+  const questions = generateDuelQuestions();
+  const roomId = database.ref('rooms').push().key;
+  await database.ref('rooms/' + roomId).set({
+    hostUid: currentUserId,
+    hostName: player.username,
+    hostLevel: player.level || 1,
+    status: 'waiting',
+    createdAt: Date.now(),
+    questions: questions,
+    players: { [currentUserId]: { name: player.username, level: player.level || 1, score: 0, correct: 0, ready: false } }
+  });
+
+  // Send challenge notification
+  await database.ref(`challenges/${targetUid}`).push({
+    fromUid: currentUserId,
+    fromName: player.username,
+    roomId: roomId,
+    ts: Date.now()
+  });
+
+  currentRoomId = roomId;
+  duelIsHost = true;
+  duelOppUid = targetUid;
+  duelOppName = targetName;
+  openRoomLobby(roomId, questions);
+
+  alert(`⚔️ Défi envoyé à ${targetName} ! En attente de sa réponse...`);
+}
+
+// ── Historique duels ───────────────────────────────────────────
+function renderDuelHistory() {
+  const el = document.getElementById('mpHistory');
+  if (!player || !player.duelHistory || player.duelHistory.length === 0) {
+    el.innerHTML = '<div style="text-align:center;color:#9ca3af;font-size:0.6rem;padding:30px;">Aucune partie jouée encore.</div>';
+    return;
+  }
+  const icons = { win: '🏆', draw: '🤝', loss: '💀' };
+  const colors = { win: '#10b981', draw: '#818cf8', loss: '#ef4444' };
+  el.innerHTML = player.duelHistory.map(d => `
+    <div style="display:flex;align-items:center;gap:10px;padding:12px;margin:6px 0;background:rgba(0,0,0,0.4);border-radius:10px;border:1px solid ${colors[d.result]}33;">
+      <span style="font-size:1.2rem;">${icons[d.result]}</span>
+      <div style="flex:1;">
+        <div style="font-size:0.6rem;color:#fbbf24;">vs ${d.opp}</div>
+        <div style="font-size:0.5rem;color:#9ca3af;">${d.date} • ${d.myScore} vs ${d.oppScore} pts</div>
+      </div>
+      <div style="text-align:right;font-size:0.5rem;color:#10b981;">+${d.coinsGain}💰 +${d.xpGain}XP</div>
+    </div>
+  `).join('');
+}
+
+// ── Abandonner / Quitter ───────────────────────────────────────
+function confirmAbandonDuel() {
+  if (confirm('🏳️ Abandonner le duel ? Tu perdras la partie.')) {
+    duelMyScore = 0;
+    endDuel();
+  }
+}
+
+function leaveMpLobby() {
+  if (roomListener && currentRoomId) {
+    database.ref('rooms/' + currentRoomId).off();
+    roomListener = null;
+  }
+  if (currentRoomId && firebaseReady) {
+    database.ref(`rooms/${currentRoomId}/players/${currentUserId}`).remove().catch(()=>{});
+    if (duelIsHost) database.ref('rooms/' + currentRoomId).remove().catch(()=>{});
+  }
+  currentRoomId = null;
+  duelIsHost = false;
+  player._duelFinished = false;
+  clearInterval(duelTimer);
+  document.getElementById('lobbyOverlay')?.remove();
+}
+
+// ── Confetti victoire ──────────────────────────────────────────
+function spawnConfetti() {
+  const colors = ['#fbbf24','#10b981','#818cf8','#ec4899','#f97316','#06b6d4'];
+  for (let i = 0; i < 60; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti-piece';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.top = '-10px';
+    c.style.background = colors[Math.floor(Math.random() * colors.length)];
+    c.style.width = (6 + Math.random() * 8) + 'px';
+    c.style.height = (6 + Math.random() * 8) + 'px';
+    c.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+    c.style.animationDelay = (Math.random() * 0.8) + 's';
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 4000);
+  }
+}
+
+// ── Hook logout pour stopper présence ─────────────────────────
+const _origLogout = logout;
+logout = function() {
+  stopPresence();
+  leaveMpLobby();
+  _origLogout();
+};
+
+// ── Démarrer la présence après login ──────────────────────────
+const _origShowScreen = showScreen;
+showScreen = function(screenId) {
+  _origShowScreen(screenId);
+  if (screenId === 'homeScreen' && player && firebaseReady && currentUserId && !currentUserId.startsWith('local_') && currentUserId !== 'admin') {
+    // Refresh presence on home
+    database.ref('presence/' + currentUserId).update({ ts: Date.now(), username: player.username, level: player.level || 1, maxLevel: player.maxLevel || 1, online: true }).catch(()=>{});
+  }
+};
+
+// Start presence when player logs in (hook into updateHomeScreen first call)
+const _origUpdateHS = updateHomeScreen;
+updateHomeScreen = function() {
+  _origUpdateHS();
+  if (player && !player._presenceStarted && firebaseReady && currentUserId && !currentUserId.startsWith('local_') && currentUserId !== 'admin') {
+    player._presenceStarted = true;
+    startPresence();
+  }
+};
+
+// ========================================
+// HOOKS INTO EXISTING FUNCTIONS
+// ========================================
+
+// Check talent points when game initializes
+const _origInitGame = initGame;
+initGame = function(newSession) {
+  _origInitGame(newSession);
+  if (player) {
+    checkTalentPoints();
+    updateEnergyDisplay();
+  }
+};
+
+// ========================================
 // SAUVEGARDE — TOUTES LES SECONDES
 // ========================================
 let autoSaveTimer = null;
@@ -2565,6 +4671,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && pla
 // Lancer Firebase dès que la page est chargée
 window.addEventListener('load', () => {
   initFirebase();
+  scheduleRandomEvent();
 });
 </script>
 </body>
