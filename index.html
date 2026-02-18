@@ -2,9 +2,46 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+
+<!-- SEO & compatibilité navigateurs -->
+<meta name="description" content="Schoolmes - L'aventure éducative avec 10 000 niveaux de quiz !">
+<meta name="keywords" content="schoolmes, éducatif, quiz, jeu, apprentissage, école">
+<meta name="author" content="Schoolmes">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#1e3a8a">
+
+<!-- Open Graph (Facebook, Discord, WhatsApp...) -->
+<meta property="og:title" content="Schoolmes - Aventure Éducative">
+<meta property="og:description" content="10 000 niveaux de quiz éducatifs, des badges, un classement mondial !">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Schoolmes - Aventure Éducative">
+<meta name="twitter:description" content="10 000 niveaux de quiz éducatifs !">
+
+<!-- Compatibilité Apple / iOS -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Schoolmes">
+<meta name="format-detection" content="telephone=no">
+
+<!-- Icône favicon générique -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+
 <title>Schoolmes - Aventure Éducative</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+<!-- Polyfill pour vieux navigateurs -->
+<script>
+// Polyfill Promise pour IE
+if (typeof Promise === 'undefined') {
+  document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/es6-promise/4.2.8/es6-promise.auto.min.js"><\/script>');
+}
+</script>
 
 <!-- Firebase SDK v9 compat — chargement robuste avec CDN alternatif -->
 <script>
@@ -18,14 +55,20 @@ window._fbLoadAttempt = 0;
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"
   onerror="window._fbCDNFailed=true"></script>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin: 0; padding: 0; -webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box; }
 
 body {
   font-family: 'Press Start 2P', cursive;
+  background: -webkit-linear-gradient(135deg, #1e3a8a 0%, #7c3aed 50%, #ec4899 100%);
+  background: -moz-linear-gradient(135deg, #1e3a8a 0%, #7c3aed 50%, #ec4899 100%);
+  background: -o-linear-gradient(135deg, #1e3a8a 0%, #7c3aed 50%, #ec4899 100%);
   background: linear-gradient(135deg, #1e3a8a 0%, #7c3aed 50%, #ec4899 100%);
   color: white;
   overflow-x: hidden;
   min-height: 100vh;
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 .screen {
@@ -57,19 +100,31 @@ button {
   font-size: 0.7rem;
   cursor: pointer;
   margin: 8px;
+  background: -webkit-linear-gradient(135deg, #10b981, #059669);
+  background: -moz-linear-gradient(135deg, #10b981, #059669);
   background: linear-gradient(135deg, #10b981, #059669);
   color: white;
+  -webkit-transition: all 0.3s;
+  -moz-transition: all 0.3s;
+  -o-transition: all 0.3s;
   transition: all 0.3s;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 }
 
 button:hover {
+  -webkit-transform: translateY(-3px);
+  -moz-transform: translateY(-3px);
+  -ms-transform: translateY(-3px);
   transform: translateY(-3px);
+  -webkit-box-shadow: 0 6px 20px rgba(16,185,129,0.6);
   box-shadow: 0 6px 20px rgba(16,185,129,0.6);
 }
 
-button.primary { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-button.danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
-button.gold { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; }
+button.primary { background: -webkit-linear-gradient(135deg, #3b82f6, #2563eb); background: linear-gradient(135deg, #3b82f6, #2563eb); }
+button.danger { background: -webkit-linear-gradient(135deg, #ef4444, #dc2626); background: linear-gradient(135deg, #ef4444, #dc2626); }
+button.gold { background: -webkit-linear-gradient(135deg, #fbbf24, #f59e0b); background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 input {
@@ -137,7 +192,12 @@ input {
 
 .xp-fill {
   height: 100%;
+  background: -webkit-linear-gradient(90deg, #10b981, #059669);
+  background: -moz-linear-gradient(90deg, #10b981, #059669);
   background: linear-gradient(90deg, #10b981, #059669);
+  -webkit-transition: width 0.5s;
+  -moz-transition: width 0.5s;
+  -o-transition: width 0.5s;
   transition: width 0.5s;
   text-align: center;
   line-height: 25px;
@@ -154,25 +214,32 @@ input {
 .tile {
   aspect-ratio: 1;
   border-radius: 10px;
+  display: -webkit-flex;
+  display: -moz-box;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
   justify-content: center;
   font-size: 1.2rem;
   border: 2px solid rgba(255,255,255,0.2);
   cursor: pointer;
+  -webkit-transition: all 0.3s;
+  -moz-transition: all 0.3s;
+  -o-transition: all 0.3s;
   transition: all 0.3s;
   position: relative;
 }
 
-.tile:hover { transform: scale(1.05); }
+.tile:hover { -webkit-transform: scale(1.05); -moz-transform: scale(1.05); -ms-transform: scale(1.05); transform: scale(1.05); }
 
-.tile.plains { background: linear-gradient(135deg, #065f46, #064e3b); }
-.tile.forest { background: linear-gradient(135deg, #065f46, #064e3b); }
-.tile.desert { background: linear-gradient(135deg, #d97706, #b45309); }
-.tile.snow { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
-.tile.volcano { background: linear-gradient(135deg, #dc2626, #991b1b); }
-.tile.ocean { background: linear-gradient(135deg, #1d4ed8, #1e40af); }
-.tile.boss { background: linear-gradient(135deg, #7c3aed, #6d28d9); border: 3px solid #fbbf24; }
+.tile.plains { background: -webkit-linear-gradient(135deg, #065f46, #064e3b); background: linear-gradient(135deg, #065f46, #064e3b); }
+.tile.forest { background: -webkit-linear-gradient(135deg, #065f46, #064e3b); background: linear-gradient(135deg, #065f46, #064e3b); }
+.tile.desert { background: -webkit-linear-gradient(135deg, #d97706, #b45309); background: linear-gradient(135deg, #d97706, #b45309); }
+.tile.snow { background: -webkit-linear-gradient(135deg, #0ea5e9, #0284c7); background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+.tile.volcano { background: -webkit-linear-gradient(135deg, #dc2626, #991b1b); background: linear-gradient(135deg, #dc2626, #991b1b); }
+.tile.ocean { background: -webkit-linear-gradient(135deg, #1d4ed8, #1e40af); background: linear-gradient(135deg, #1d4ed8, #1e40af); }
+.tile.boss { background: -webkit-linear-gradient(135deg, #7c3aed, #6d28d9); background: linear-gradient(135deg, #7c3aed, #6d28d9); border: 3px solid #fbbf24; }
 
 .tile.current { border: 3px solid #10b981; box-shadow: 0 0 20px #10b981; }
 .tile.locked { opacity: 0.3; cursor: not-allowed; }
@@ -217,6 +284,9 @@ input {
 }
 
 .shop-item:hover {
+  -webkit-transform: translateY(-5px);
+  -moz-transform: translateY(-5px);
+  -ms-transform: translateY(-5px);
   transform: translateY(-5px);
   border-color: #fbbf24;
 }
@@ -269,19 +339,38 @@ input {
 }
 
 .pixel-grid {
+  display: -ms-grid;
   display: grid;
   grid-template-columns: repeat(16, 1fr);
-  gap: 1px;
-  width: 320px;
-  height: 320px;
+  -ms-grid-columns: (1fr)[16];
+  gap: 2px;
+  width: 352px;
+  height: 352px;
   margin: 0 auto 20px;
-  background: #000;
-  border: 2px solid #fbbf24;
+  background: rgba(255,255,255,0.35);
+  border: 3px solid #fbbf24;
+  border-radius: 6px;
+  padding: 2px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 .pixel {
   aspect-ratio: 1;
-  cursor: pointer;
+  cursor: crosshair;
+  border-radius: 2px;
+  -webkit-transition: filter 0.1s;
+  -moz-transition: filter 0.1s;
+  -o-transition: filter 0.1s;
+  transition: filter 0.1s;
+}
+
+.pixel:hover {
+  -webkit-filter: brightness(1.3);
+  filter: brightness(1.3);
+  outline: 1px solid rgba(255,255,255,0.8);
 }
 
 .color-palette {
@@ -328,20 +417,30 @@ input {
 
 .bonus-button {
   padding: 10px 20px;
+  background: -webkit-linear-gradient(135deg, #8b5cf6, #7c3aed);
   background: linear-gradient(135deg, #8b5cf6, #7c3aed);
   color: white;
   border: 2px solid #fbbf24;
   border-radius: 10px;
   font-size: 0.7rem;
   cursor: pointer;
+  -webkit-transition: all 0.3s;
+  -moz-transition: all 0.3s;
+  -o-transition: all 0.3s;
   transition: all 0.3s;
+  display: -webkit-flex;
   display: flex;
+  -webkit-align-items: center;
   align-items: center;
   gap: 8px;
 }
 
 .bonus-button:hover {
+  -webkit-transform: scale(1.05);
+  -moz-transform: scale(1.05);
+  -ms-transform: scale(1.05);
   transform: scale(1.05);
+  -webkit-box-shadow: 0 0 20px rgba(139,92,246,0.8);
   box-shadow: 0 0 20px rgba(139,92,246,0.8);
 }
 
@@ -366,6 +465,7 @@ input {
 
 .choice-btn {
   padding: 15px 20px;
+  background: -webkit-linear-gradient(135deg, rgba(59,130,246,0.3), rgba(37,99,235,0.3));
   background: linear-gradient(135deg, rgba(59,130,246,0.3), rgba(37,99,235,0.3));
   border: 2px solid #3b82f6;
   border-radius: 12px;
@@ -373,18 +473,30 @@ input {
   font-family: 'Press Start 2P', cursive;
   font-size: 0.65rem;
   cursor: pointer;
+  -webkit-transition: all 0.3s;
+  -moz-transition: all 0.3s;
+  -o-transition: all 0.3s;
   transition: all 0.3s;
   text-align: left;
   line-height: 1.6;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 100%;
 }
 
 .choice-btn:hover {
+  background: -webkit-linear-gradient(135deg, rgba(59,130,246,0.5), rgba(37,99,235,0.5));
   background: linear-gradient(135deg, rgba(59,130,246,0.5), rgba(37,99,235,0.5));
   border-color: #fbbf24;
+  -webkit-transform: translateX(5px);
+  -moz-transform: translateX(5px);
+  -ms-transform: translateX(5px);
   transform: translateX(5px);
 }
 
 .choice-btn.selected {
+  background: -webkit-linear-gradient(135deg, rgba(251,191,36,0.4), rgba(245,158,11,0.4));
   background: linear-gradient(135deg, rgba(251,191,36,0.4), rgba(245,158,11,0.4));
   border-color: #fbbf24;
 }
@@ -500,6 +612,9 @@ input {
   font-size: 0.5rem;
   z-index: 9999;
   opacity: 0;
+  -webkit-transition: opacity 0.4s;
+  -moz-transition: opacity 0.4s;
+  -o-transition: opacity 0.4s;
   transition: opacity 0.4s;
   pointer-events: none;
 }
@@ -842,13 +957,35 @@ const BIOMES = [
 ];
 
 const SHOP_ITEMS = [
-  { id: 1, emoji: '💡', name: 'Indice', desc: 'Révèle une lettre', price: 100 },
-  { id: 2, emoji: '⏭️', name: 'Passer', desc: 'Passe la question', price: 150 },
-  { id: 3, emoji: '🔄', name: '2ème Chance', desc: 'Efface une erreur', price: 200 },
-  { id: 4, emoji: '💰', name: 'Pack Pièces', desc: '+500 pièces', price: 50 },
-  { id: 5, emoji: '⚡', name: 'Boost XP x2', desc: 'Double XP (10Q)', price: 300 },
-  { id: 6, emoji: '🎓', name: 'Badge Élite', desc: 'Badge exclusif', price: 1000 },
-  { id: 7, emoji: '👑', name: 'Badge Légende', desc: 'Badge ultime', price: 5000 }
+  // ---- CONSOMMABLES ----
+  { id: 1,  emoji: '💡', name: 'Indice',          desc: 'Révèle une lettre de la réponse',      price: 100,  category: '🎒 Consommables' },
+  { id: 2,  emoji: '⏭️', name: 'Passer ×1',       desc: 'Passe 1 question gratuitement',        price: 150,  category: '🎒 Consommables' },
+  { id: 3,  emoji: '🔄', name: '2ème Chance',      desc: 'Efface une erreur (1 vie recupérée)',  price: 200,  category: '🎒 Consommables' },
+  { id: 8,  emoji: '💡', name: 'Pack 3 Indices',   desc: '3 indices en une fois',               price: 250,  category: '🎒 Consommables' },
+  { id: 9,  emoji: '⏭️', name: 'Pack 3 Passes',    desc: '3 passes en une fois',                price: 400,  category: '🎒 Consommables' },
+  { id: 10, emoji: '🔄', name: 'Pack 3 Chances',   desc: '3 secondes chances en une fois',      price: 550,  category: '🎒 Consommables' },
+  { id: 11, emoji: '🛡️', name: 'Bouclier',         desc: 'Bloque la prochaine erreur',          price: 350,  category: '🎒 Consommables' },
+  { id: 12, emoji: '🎯', name: 'Viseur',           desc: 'Élimine 2 mauvais choix (QCM)',       price: 175,  category: '🎒 Consommables' },
+  { id: 13, emoji: '⏳', name: 'Gel du temps',     desc: 'Gèle 1 erreur (ne compte pas)',       price: 300,  category: '🎒 Consommables' },
+  // ---- PIÈCES & XP ----
+
+  { id: 5,  emoji: '⚡', name: 'Boost XP ×2',      desc: 'Double XP pendant 10 questions',      price: 300,  category: '💰 Pièces & XP' },
+  { id: 16, emoji: '🌟', name: 'Boost XP ×3',      desc: 'Triple XP pendant 10 questions',      price: 700,  category: '💰 Pièces & XP' },
+  { id: 17, emoji: '💸', name: 'Bonus Pièces ×2',  desc: 'Double pièces pendant 20 questions',  price: 500,  category: '💰 Pièces & XP' },
+  // ---- BADGES ----
+  { id: 6,  emoji: '🎓', name: 'Badge Élite',      desc: 'Badge exclusif affiché sur ton profil', price: 1000, category: '🏅 Badges' },
+  { id: 7,  emoji: '👑', name: 'Badge Légende',    desc: 'Le badge ultime des champions',       price: 5000, category: '🏅 Badges' },
+  { id: 18, emoji: '🔥', name: 'Badge Flamme',     desc: 'Tu es en feu !',                      price: 800,  category: '🏅 Badges' },
+  { id: 19, emoji: '⚔️', name: 'Badge Guerrier',   desc: 'Brave comme un chevalier',            price: 1200, category: '🏅 Badges' },
+  { id: 20, emoji: '🌈', name: 'Badge Arc-en-ciel', desc: 'Pour les esprits colorés',           price: 900,  category: '🏅 Badges' },
+  { id: 21, emoji: '🦄', name: 'Badge Licorne',    desc: 'Rare et magique',                     price: 2500, category: '🏅 Badges' },
+  { id: 22, emoji: '🧠', name: 'Badge Génie',      desc: 'Pour les cerveaux hors-norme',        price: 3000, category: '🏅 Badges' },
+  { id: 23, emoji: '🏆', name: 'Badge Champion',   desc: 'Pour les vrais vainqueurs',           price: 4000, category: '🏅 Badges' },
+  // ---- SPÉCIAUX ----
+  { id: 24, emoji: '🎲', name: 'Loterie',          desc: 'Tente ta chance : 50–2000 pièces',    price: 100,  category: '✨ Spéciaux' },
+  { id: 25, emoji: '📦', name: 'Coffre Mystère',   desc: 'Contient un bonus surprise !',        price: 250,  category: '✨ Spéciaux' },
+  { id: 26, emoji: '🎁', name: 'Mega Coffre',      desc: 'Coffre premium = gros bonus',         price: 600,  category: '✨ Spéciaux' },
+  { id: 27, emoji: '♻️', name: 'Reset Erreurs',    desc: 'Remet à 0 tes erreurs de session',   price: 1500, category: '✨ Spéciaux' },
 ];
 
 // QUESTIONS (adaptées pour validation flexible)
@@ -1107,10 +1244,15 @@ async function login() {
     return;
   }
 
-  // Admin local (toujours en local, sans Firebase)
-  if (username.toLowerCase() === 'titi' && code === '120511') {
+  // Admins locaux (toujours en local, sans Firebase)
+  const ADMINS = [
+    { username: 'titi',   code: '120511', display: 'Titi'   },
+    { username: 'darius', code: '#2012#', display: 'Darius' },
+  ];
+  const matchedAdmin = ADMINS.find(a => username.toLowerCase() === a.username && code === a.code);
+  if (matchedAdmin) {
     player = {
-      username: 'Titi', code: code, level: 1, xp: 0,
+      username: matchedAdmin.display, code: code, level: 1, xp: 0,
       coins: 999999, maxLevel: 10000, badges: ['👑 ADMIN'], isAdmin: true,
       inventory: { hints: 999, skips: 999, secondChances: 999, xpBoost: 999 },
       avatarData: null, stats: { questionsAnswered: 0, bossesDefeated: 0 }
@@ -1451,54 +1593,116 @@ function updateHeartsDisplay() {
 function renderBonusBar() {
   const bonusBar = document.getElementById('bonusBar');
   bonusBar.innerHTML = '<div style="font-size:0.7rem; color:#fbbf24; margin-bottom:10px; width:100%; text-align:center;">✨ MES BONUS ✨</div>';
-  
-  // Indice
-  const hintBtn = document.createElement('button');
-  hintBtn.className = 'bonus-button';
-  hintBtn.innerHTML = `💡 Indice <span class="bonus-count">x${player.inventory.hints}</span>`;
-  hintBtn.disabled = player.inventory.hints === 0;
-  hintBtn.onclick = useHint;
-  bonusBar.appendChild(hintBtn);
-  
-  // Passer
-  const skipBtn = document.createElement('button');
-  skipBtn.className = 'bonus-button';
-  skipBtn.innerHTML = `⏭️ Passer <span class="bonus-count">x${player.inventory.skips}</span>`;
-  skipBtn.disabled = player.inventory.skips === 0;
-  skipBtn.onclick = useSkipBonus;
-  bonusBar.appendChild(skipBtn);
-  
-  // 2ème chance
-  const secondChanceBtn = document.createElement('button');
-  secondChanceBtn.className = 'bonus-button';
-  secondChanceBtn.innerHTML = `🔄 2ème Chance <span class="bonus-count">x${player.inventory.secondChances}</span>`;
-  secondChanceBtn.disabled = player.inventory.secondChances === 0 || sessionErrors === 0;
-  secondChanceBtn.onclick = useSecondChance;
-  bonusBar.appendChild(secondChanceBtn);
+
+  const inv = player.inventory;
+
+  const bonusDefs = [
+    { key: 'hints',         label: '💡 Indice',       fn: useHint,         cond: true },
+    { key: 'skips',         label: '⏭️ Passer',        fn: useSkipBonus,    cond: true },
+    { key: 'secondChances', label: '🔄 2ème Chance',   fn: useSecondChance, cond: sessionErrors > 0 },
+    { key: 'shields',       label: '🛡️ Bouclier',      fn: useShield,       cond: true },
+    { key: 'aimers',        label: '🎯 Viseur',         fn: useAimer,        cond: currentQuestion && currentQuestion.type === 'qcm' },
+    { key: 'freezes',       label: '⏳ Gel',            fn: useFreeze,       cond: true },
+    { key: 'xpBoost',       label: '⚡ Boost XP×2',    fn: null,            cond: true, info: true },
+    { key: 'xpBoost3',      label: '🌟 Boost XP×3',    fn: null,            cond: true, info: true },
+    { key: 'coinBoost',     label: '💸 Bonus Pièces',  fn: null,            cond: true, info: true },
+  ];
+
+  bonusDefs.forEach(({ key, label, fn, cond, info }) => {
+    const count = inv[key] || 0;
+    if (count === 0) return; // masquer si vide
+    const btn = document.createElement('button');
+    btn.className = 'bonus-button';
+    btn.innerHTML = `${label} <span class="bonus-count">x${count}</span>`;
+    if (!fn || !cond) {
+      btn.disabled = true;
+      btn.title = info ? 'Actif automatiquement' : 'Non disponible maintenant';
+    } else {
+      btn.onclick = fn;
+    }
+    bonusBar.appendChild(btn);
+  });
+
+  // Si aucun bonus
+  const btns = bonusBar.querySelectorAll('.bonus-button');
+  if (btns.length === 0) {
+    bonusBar.innerHTML += '<div style="font-size:0.6rem; color:#6b7280; text-align:center;">Aucun bonus en stock — va à la boutique !</div>';
+  }
 }
 
 function useHint() {
   if (player.inventory.hints <= 0) return;
-  
   const answer = currentQuestion.answer;
   const revealed = answer.charAt(Math.floor(Math.random() * answer.length));
-  
   player.inventory.hints--;
   savePlayer();
-  
-  alert(`💡 Indice : La réponse contient la lettre "${revealed}"`);
+  alert(`💡 Indice : La réponse contient la lettre "${revealed.toUpperCase()}"`);
   renderBonusBar();
 }
 
 function useSkipBonus() {
   if (player.inventory.skips <= 0) return;
-  
   if (confirm('⏭️ Utiliser un bonus Passer ?')) {
     player.inventory.skips--;
     if (currentLevel >= player.maxLevel) player.maxLevel = currentLevel + 1;
+    currentLevel++;
     savePlayer();
-    showScreen('gameScreen');
-    initGame(false);
+    // Charger la question suivante directement
+    currentQuestion = generateQuestion(currentLevel);
+    selectedChoiceValue = null;
+    document.getElementById('quizLevelTitle').textContent = `Niveau ${currentLevel}`;
+    document.getElementById('quizFeedback').innerHTML = '';
+    document.getElementById('questionText').textContent = currentQuestion.question;
+    const choiceDiv = document.getElementById('choiceButtons');
+    const textDiv = document.getElementById('textAnswerGroup');
+    if (currentQuestion.type === 'qcm') {
+      choiceDiv.style.display = 'flex';
+      textDiv.style.display = 'none';
+      renderChoiceButtons();
+    } else {
+      choiceDiv.style.display = 'none';
+      textDiv.style.display = 'block';
+      document.getElementById('answerInput').value = '';
+      document.getElementById('answerInput').focus();
+    }
+    renderBonusBar();
+  }
+}
+
+function useShield() {
+  if ((player.inventory.shields || 0) <= 0) return;
+  if (confirm('🛡️ Activer le Bouclier ? La prochaine erreur ne comptera pas.')) {
+    player.inventory.shields--;
+    player._shieldActive = true;
+    savePlayer();
+    renderBonusBar();
+    alert('🛡️ Bouclier activé ! Ta prochaine erreur sera bloquée.');
+  }
+}
+
+function useAimer() {
+  if ((player.inventory.aimers || 0) <= 0) return;
+  if (!currentQuestion || currentQuestion.type !== 'qcm') {
+    alert('🎯 Le Viseur ne fonctionne que sur les QCM !'); return;
+  }
+  // Éliminer 2 mauvaises réponses
+  const wrongBtns = Array.from(document.querySelectorAll('.choice-btn'))
+    .filter(b => normalizeText(b.textContent) !== normalizeText(currentQuestion.answer));
+  const toHide = wrongBtns.sort(() => Math.random() - 0.5).slice(0, 2);
+  toHide.forEach(b => { b.disabled = true; b.style.opacity = '0.2'; });
+  player.inventory.aimers--;
+  savePlayer();
+  renderBonusBar();
+}
+
+function useFreeze() {
+  if ((player.inventory.freezes || 0) <= 0) return;
+  if (confirm('⏳ Activer le Gel du temps ? Ta prochaine erreur ne comptera pas.')) {
+    player.inventory.freezes--;
+    player._freezeActive = true;
+    savePlayer();
+    renderBonusBar();
+    alert('⏳ Gel activé ! Ta prochaine erreur sera ignorée.');
   }
 }
 
@@ -1545,13 +1749,23 @@ function submitAnswer() {
     const isBoss = currentLevel % 100 === 0;
     let xpGain = isBoss ? 250 : 50;
     
-    // Boost XP
+    // Boost XP ×2
     if (player.inventory.xpBoost > 0) {
       xpGain *= 2;
       player.inventory.xpBoost--;
     }
+    // Boost XP ×3 (priorité sur ×2 si les deux sont actifs)
+    if (player.inventory.xpBoost3 > 0) {
+      xpGain = (isBoss ? 250 : 50) * 3;
+      player.inventory.xpBoost3--;
+    }
     
     let coinGain = isBoss ? 100 : 20;
+    // Bonus Pièces ×2
+    if ((player.inventory.coinBoost || 0) > 0) {
+      coinGain *= 2;
+      player.inventory.coinBoost--;
+    }
     
     player.xp += xpGain;
     player.coins += coinGain;
@@ -1570,9 +1784,11 @@ function submitAnswer() {
     
     savePlayer();
     
+    const boostMsg = player.inventory.xpBoost > 0 || player.inventory.xpBoost3 > 0 ? ' ⚡ BOOST !' : '';
+    const coinMsg = (player.inventory.coinBoost || 0) > 0 ? ' 💸 BONUS !' : '';
     document.getElementById('quizFeedback').innerHTML = `
       <div style="color:#10b981; font-size:1.2rem;">✅ CORRECT !</div>
-      <div style="color:#fbbf24;">+${xpGain} XP | +${coinGain} 💰</div>
+      <div style="color:#fbbf24;">+${xpGain} XP${boostMsg} | +${coinGain} 💰${coinMsg}</div>
     `;
     
     setTimeout(() => {
@@ -1581,35 +1797,67 @@ function submitAnswer() {
     }, 2000);
     
   } else {
-    // ERREUR
-    sessionErrors++;
-    failedQuestions.add(currentQuestion.id); // Marquer comme ratée
-    
-    if (sessionErrors >= 5) {
-      // GAME OVER
-      setTimeout(() => {
-        showGameOver();
-      }, 2000);
+    // ERREUR — vérifier Bouclier ou Gel
+    let blocked = false;
+    if (player._shieldActive) {
+      player._shieldActive = false;
+      blocked = true;
+      document.getElementById('quizFeedback').innerHTML = `
+        <div style="color:#f59e0b; font-size:1rem;">🛡️ Bouclier activé ! Erreur bloquée !</div>
+        <div style="color:#9ca3af; margin-top:10px;">Réponse: ${correctAnswer}</div>
+      `;
+    } else if (player._freezeActive) {
+      player._freezeActive = false;
+      blocked = true;
+      document.getElementById('quizFeedback').innerHTML = `
+        <div style="color:#38bdf8; font-size:1rem;">⏳ Gel du temps ! Erreur ignorée !</div>
+        <div style="color:#9ca3af; margin-top:10px;">Réponse: ${correctAnswer}</div>
+      `;
+    }
+
+    if (!blocked) {
+      sessionErrors++;
+      failedQuestions.add(currentQuestion.id);
+    }
+
+    if (!blocked && sessionErrors >= 5) {
+      document.getElementById('quizFeedback').innerHTML = `
+        <div style="color:#ef4444;">❌ Incorrect !</div>
+        <div style="color:#9ca3af; margin-top:10px;">Réponse: ${correctAnswer}</div>
+        <div style="color:#ef4444; margin-top:15px; font-size:1rem;">💀 GAME OVER !</div>
+      `;
+      updateHeartsDisplay();
+      setTimeout(() => { showGameOver(); }, 2000);
+      return;
+    }
+
+    if (!blocked) {
+      updateHeartsDisplay();
+      document.getElementById('quizFeedback').innerHTML = `
+        <div style="color:#ef4444;">❌ Incorrect !</div>
+        <div style="color:#9ca3af; margin-top:10px;">Réponse: ${correctAnswer}</div>
+      `;
     }
     
-    updateHeartsDisplay();
-    
-    document.getElementById('quizFeedback').innerHTML = `
-      <div style="color:#ef4444;">❌ Incorrect !</div>
-      <div style="color:#9ca3af; margin-top:10px;">Réponse: ${correctAnswer}</div>
-      ${sessionErrors >= 5 ? '<div style="color:#ef4444; margin-top:15px; font-size:1rem;">💀 GAME OVER !</div>' : ''}
-    `;
-    
-    if (sessionErrors < 5) {
-      setTimeout(() => {
-        // Nouvelle question
-        currentQuestion = generateQuestion(currentLevel);
-        document.getElementById('questionText').textContent = currentQuestion.question;
+    setTimeout(() => {
+      currentQuestion = generateQuestion(currentLevel);
+      selectedChoiceValue = null;
+      document.getElementById('questionText').textContent = currentQuestion.question;
+      document.getElementById('quizFeedback').innerHTML = '';
+      const choiceDiv = document.getElementById('choiceButtons');
+      const textDiv = document.getElementById('textAnswerGroup');
+      if (currentQuestion.type === 'qcm') {
+        choiceDiv.style.display = 'flex';
+        textDiv.style.display = 'none';
+        renderChoiceButtons();
+      } else {
+        choiceDiv.style.display = 'none';
+        textDiv.style.display = 'block';
         document.getElementById('answerInput').value = '';
         document.getElementById('answerInput').focus();
-        document.getElementById('quizFeedback').innerHTML = '';
-      }, 3000);
-    }
+      }
+      renderBonusBar();
+    }, 3000);
   }
 }
 
@@ -1636,9 +1884,29 @@ function skipQuestion() {
     if (confirm(`Passer pour ${skipCost} pièces ?`)) {
       player.coins -= skipCost;
       if (currentLevel >= player.maxLevel) player.maxLevel = currentLevel + 1;
+      currentLevel++;
       savePlayer();
-      showScreen('gameScreen');
-      initGame(false);
+      // Charger directement la question suivante sans repasser par la carte
+      currentQuestion = generateQuestion(currentLevel);
+      selectedChoiceValue = null;
+      document.getElementById('quizLevelTitle').textContent = `Niveau ${currentLevel}`;
+      document.getElementById('quizFeedback').innerHTML = '';
+      document.getElementById('questionText').textContent = currentQuestion.question;
+      const choiceDiv = document.getElementById('choiceButtons');
+      const textDiv = document.getElementById('textAnswerGroup');
+      if (currentQuestion.type === 'qcm') {
+        choiceDiv.style.display = 'flex';
+        textDiv.style.display = 'none';
+        renderChoiceButtons();
+      } else {
+        choiceDiv.style.display = 'none';
+        textDiv.style.display = 'block';
+        document.getElementById('answerInput').value = '';
+        document.getElementById('answerInput').focus();
+      }
+      renderBonusBar();
+      // Mettre à jour l'affichage pièces
+      document.getElementById('shopCoins') && (document.getElementById('shopCoins').textContent = player.coins);
     }
   } else {
     alert('❌ Pas assez de pièces !');
@@ -1672,20 +1940,36 @@ function renderShop() {
   document.getElementById('shopCoins').textContent = player.coins;
   const shopDiv = document.getElementById('shopItems');
   shopDiv.innerHTML = '';
-  
+
+  // Grouper par catégorie
+  const categories = {};
   SHOP_ITEMS.forEach(item => {
-    const div = document.createElement('div');
-    div.className = 'shop-item';
-    div.innerHTML = `
-      <div class="shop-item-icon">${item.emoji}</div>
-      <div class="shop-item-name">${item.name}</div>
-      <div class="shop-item-desc">${item.desc}</div>
-      <div class="shop-item-price">💰 ${item.price}</div>
-      <button onclick="buyItem(${item.id})" ${player.coins < item.price ? 'disabled' : ''}>
-        ${player.coins < item.price ? '❌ Trop cher' : '✅ Acheter'}
-      </button>
-    `;
-    shopDiv.appendChild(div);
+    const cat = item.category || 'Divers';
+    if (!categories[cat]) categories[cat] = [];
+    categories[cat].push(item);
+  });
+
+  Object.entries(categories).forEach(([catName, items]) => {
+    // Titre de catégorie
+    const title = document.createElement('div');
+    title.style.cssText = 'grid-column: 1/-1; margin-top:20px; margin-bottom:5px; font-size:0.85rem; color:#fbbf24; border-bottom:2px solid #fbbf24; padding-bottom:8px;';
+    title.textContent = catName;
+    shopDiv.appendChild(title);
+
+    items.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'shop-item';
+      div.innerHTML = `
+        <div class="shop-item-icon">${item.emoji}</div>
+        <div class="shop-item-name">${item.name}</div>
+        <div class="shop-item-desc">${item.desc}</div>
+        <div class="shop-item-price">💰 ${item.price}</div>
+        <button onclick="buyItem(${item.id})" ${player.coins < item.price ? 'disabled' : ''}>
+          ${player.coins < item.price ? '❌ Trop cher' : '✅ Acheter'}
+        </button>
+      `;
+      shopDiv.appendChild(div);
+    });
   });
 }
 
@@ -1695,15 +1979,69 @@ function buyItem(id) {
   
   player.coins -= item.price;
   
-  if (id === 1) player.inventory.hints++;
-  else if (id === 2) player.inventory.skips++;
-  else if (id === 3) player.inventory.secondChances++;
-  else if (id === 4) player.coins += 500;
-  else if (id === 5) player.inventory.xpBoost += 10;
-  else if (id === 6 || id === 7) {
-    if (!player.badges.includes(item.emoji)) player.badges.push(item.emoji);
+  if      (id === 1)  { player.inventory.hints++; }
+  else if (id === 2)  { player.inventory.skips++; }
+  else if (id === 3)  { player.inventory.secondChances++; }
+  else if (id === 4)  { player.coins += 500; }
+  else if (id === 5)  { player.inventory.xpBoost += 10; }
+  else if (id === 6 || id === 7 || id === 18 || id === 19 || id === 20 || id === 21 || id === 22 || id === 23) {
+    const badge = item.emoji + ' ' + item.name;
+    if (!player.badges.includes(badge)) player.badges.push(badge);
   }
-  
+  // Packs consommables
+  else if (id === 8)  { player.inventory.hints += 3; }
+  else if (id === 9)  { player.inventory.skips += 3; }
+  else if (id === 10) { player.inventory.secondChances += 3; }
+  else if (id === 11) { player.inventory.shields = (player.inventory.shields || 0) + 1; }
+  else if (id === 12) { player.inventory.aimers = (player.inventory.aimers || 0) + 1; }
+  else if (id === 13) { player.inventory.freezes = (player.inventory.freezes || 0) + 1; }
+  // Pièces
+  else if (id === 14) { player.coins += 2000; }
+  else if (id === 15) { player.coins += 5000; }
+  // Boosts XP
+  else if (id === 16) { player.inventory.xpBoost3 = (player.inventory.xpBoost3 || 0) + 10; }
+  else if (id === 17) { player.inventory.coinBoost = (player.inventory.coinBoost || 0) + 20; }
+  // Spéciaux
+  else if (id === 24) {
+    const gains = [50, 100, 150, 200, 300, 500, 1000, 2000];
+    const gain = gains[Math.floor(Math.random() * gains.length)];
+    player.coins += gain;
+    savePlayer(); renderShop(); updateHomeScreen();
+    alert(`🎲 Loterie ! Tu as gagné ${gain} pièces !`); return;
+  }
+  else if (id === 25) {
+    // Coffre mystère
+    const prizes = [
+      () => { player.inventory.hints += 2; return '💡 2 Indices'; },
+      () => { player.inventory.skips += 1; return '⏭️ 1 Passe'; },
+      () => { player.inventory.secondChances += 1; return '🔄 1 Seconde Chance'; },
+      () => { player.coins += 300; return '💰 300 Pièces'; },
+      () => { player.inventory.xpBoost += 5; return '⚡ Boost XP ×2 (5Q)'; },
+    ];
+    const prize = prizes[Math.floor(Math.random() * prizes.length)];
+    const msg = prize();
+    savePlayer(); renderShop(); updateHomeScreen();
+    alert(`📦 Coffre ouvert ! Tu as gagné : ${msg}`); return;
+  }
+  else if (id === 26) {
+    // Mega coffre
+    const megaPrizes = [
+      () => { player.inventory.hints += 5; player.inventory.skips += 2; return '💡×5 + ⏭️×2'; },
+      () => { player.coins += 1500; return '💰 1 500 Pièces'; },
+      () => { player.inventory.xpBoost += 10; return '⚡ Boost XP ×2 (10Q)'; },
+      () => { player.inventory.secondChances += 3; return '🔄 3 Secondes Chances'; },
+      () => { player.coins += 500; player.inventory.skips += 3; return '💰 500 + ⏭️×3'; },
+    ];
+    const prize = megaPrizes[Math.floor(Math.random() * megaPrizes.length)];
+    const msg = prize();
+    savePlayer(); renderShop(); updateHomeScreen();
+    alert(`🎁 Mega Coffre ouvert ! Gain : ${msg}`); return;
+  }
+  else if (id === 27) {
+    sessionErrors = 0;
+    updateHeartsDisplay && updateHeartsDisplay();
+  }
+
   savePlayer();
   alert(`🎉 ${item.name} acheté !`);
   renderShop();
@@ -1722,20 +2060,63 @@ function initAvatarEditor() {
   renderColorPalette();
 }
 
+let isDrawing = false;
+
 function renderPixelGrid() {
   const grid = document.getElementById('pixelGrid');
   grid.innerHTML = '';
-  
+
+  // Stop drawing when mouse released anywhere
+  const stopDrawing = () => { isDrawing = false; };
+  document.removeEventListener('mouseup', stopDrawing);
+  document.removeEventListener('touchend', stopDrawing);
+  document.addEventListener('mouseup', stopDrawing);
+  document.addEventListener('touchend', stopDrawing);
+
+  // Prevent scrolling while drawing on touch
+  grid.addEventListener('touchmove', (e) => { if (isDrawing) e.preventDefault(); }, { passive: false });
+
   for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
     const pixel = document.createElement('div');
     pixel.className = 'pixel';
     pixel.style.backgroundColor = pixelData[i];
-    pixel.onclick = () => {
-      pixelData[i] = selectedColor;
-      pixel.style.backgroundColor = selectedColor;
+    pixel.dataset.index = i;
+
+    const paintPixel = (el) => {
+      const idx = parseInt(el.dataset.index);
+      if (pixelData[idx] !== selectedColor) {
+        pixelData[idx] = selectedColor;
+        el.style.backgroundColor = selectedColor;
+      }
     };
+
+    // Mouse support
+    pixel.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      isDrawing = true;
+      paintPixel(pixel);
+    });
+    pixel.addEventListener('mouseover', () => {
+      if (isDrawing) paintPixel(pixel);
+    });
+
+    // Touch support
+    pixel.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      isDrawing = true;
+      paintPixel(pixel);
+    }, { passive: false });
+
     grid.appendChild(pixel);
   }
+
+  // Touch move: find element under finger and paint it
+  grid.addEventListener('touchmove', (e) => {
+    if (!isDrawing) return;
+    const touch = e.touches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (el && el.classList.contains('pixel')) paintPixel(el);
+  }, { passive: false });
 }
 
 function renderColorPalette() {
