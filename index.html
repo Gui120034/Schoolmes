@@ -414,6 +414,57 @@ input:checked + .toggle-slider:before { transform: translateX(24px); }
 /* Anticheat hidden flag */
 .ac-hidden { display: none !important; }
 
+/* BAN */
+.ban-screen {
+  position: fixed; top:0; left:0; right:0; bottom:0;
+  background: #0a0005;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 99999; padding: 30px; text-align: center;
+}
+.ban-screen h1 { color: #ef4444; font-size: 2rem; margin-bottom: 20px; animation: eventPulse 1.5s infinite; }
+.ban-screen .ban-reason {
+  background: rgba(239,68,68,0.15); border: 2px solid #ef4444;
+  border-radius: 12px; padding: 20px; max-width: 500px; margin: 15px auto;
+  font-size: 0.65rem; color: #fca5a5; line-height: 1.8;
+}
+.ban-badge {
+  background: linear-gradient(135deg, #ef4444, #b91c1c) !important;
+  color: #fff !important; border: 2px solid #fca5a5 !important;
+  animation: none !important;
+}
+.admin-ban-modal {
+  position: fixed; top:0; left:0; right:0; bottom:0;
+  background: rgba(0,0,0,0.95); z-index: 20000;
+  overflow-y: auto; padding: 20px;
+}
+.admin-ban-card {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px; margin: 6px 0;
+  background: rgba(255,255,255,0.05); border-radius: 10px;
+  font-size: 0.55rem;
+}
+.admin-ban-card.is-banned { background: rgba(239,68,68,0.15); border: 1px solid #ef4444; }
+
+/* THÈMES */
+body.theme-dark {
+  background: linear-gradient(135deg, #0a0a0f 0%, #111827 50%, #1f2937 100%) !important;
+}
+body.theme-dark .screen {
+  background: rgba(0,0,0,0.85) !important;
+  border-color: #6366f1 !important;
+}
+body.theme-neon {
+  background: linear-gradient(135deg, #000000 0%, #0a0a1a 50%, #001100 100%) !important;
+}
+body.theme-neon .screen {
+  background: rgba(0,10,0,0.9) !important;
+  border-color: #00ff41 !important;
+  box-shadow: 0 0 30px rgba(0,255,65,0.4) !important;
+}
+body.theme-neon .game-title { color: #00ff41 !important; text-shadow: 0 0 20px #00ff41 !important; }
+body.theme-neon button { background: linear-gradient(135deg, #00ff41, #00cc33) !important; color: #000 !important; }
+body.theme-neon .stat-value { color: #00ff41 !important; }
+
 .pixel-grid {
   display: -ms-grid;
   display: grid;
@@ -1164,12 +1215,12 @@ input:checked + .toggle-slider:before { transform: translateX(24px); }
   
   <div class="input-group">
     <label>📝 Pseudo</label>
-    <input type="text" id="loginUsername" placeholder="Ton pseudo">
+    <input type="text" id="loginUsername" placeholder="Ton pseudo" onkeypress="if(event.key==='Enter') login()">
   </div>
   
   <div class="input-group">
     <label>🔐 Code (min 6 caractères)</label>
-    <input type="password" id="loginCode" placeholder="Ton code secret">
+    <input type="password" id="loginCode" placeholder="Ton code secret" onkeypress="if(event.key==='Enter') login()">
   </div>
   
   <div style="text-align:center; margin-top:30px;">
@@ -2044,6 +2095,8 @@ async function login() {
     try {
       const cred = await auth.signInWithEmailAndPassword(email, code);
       currentUserId = cred.user.uid;
+      // Vérifier le ban AVANT de charger
+      if (await checkBanStatus(currentUserId)) return;
       await loadPlayerFromFirebase(currentUserId);
       startAutoSave();
       startPlayTimeTracking();
@@ -2127,6 +2180,194 @@ function logout() {
     const gearBtn = document.getElementById('settingsGearBtn');
     if (gearBtn) gearBtn.style.display = 'none';
     showScreen('loginScreen');
+  }
+}
+
+// ========================================
+// SYSTÈME DE BAN
+// ========================================
+
+async function checkBanStatus(uid) {
+  if (!firebaseReady || !uid) return false;
+  try {
+    const snap = await database.ref('bans/' + uid).once('value');
+    if (!snap.exists()) return false;
+    const ban = snap.val();
+    // Vérifier si ban temporaire expiré
+    if (ban.expiresAt && ban.expiresAt < Date.now()) {
+      await database.ref('bans/' + uid).remove();
+      return false;
+    }
+    showBanScreen(ban);
+    return true;
+  } catch(e) {
+    console.error('Ban check error:', e);
+    return false;
+  }
+}
+
+function showBanScreen(ban) {
+  // Déconnecter si besoin
+  if (firebaseReady && auth) auth.signOut().catch(()=>{});
+  player = null; currentUserId = null;
+  // Masquer tous les écrans
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  // Afficher l'écran de ban
+  let existing = document.getElementById('banScreen');
+  if (existing) existing.remove();
+  const div = document.createElement('div');
+  div.id = 'banScreen';
+  div.className = 'ban-screen';
+  const expireText = ban.expiresAt
+    ? `<br>🕐 Expiration : ${new Date(ban.expiresAt).toLocaleString('fr-FR')}`
+    : '<br>⛔ Banissement permanent';
+  div.innerHTML = `
+    <div style="font-size:4rem;margin-bottom:10px;">🔨</div>
+    <h1>COMPTE BANNI</h1>
+    <div class="ban-reason">
+      <div style="font-size:0.8rem;color:#ef4444;margin-bottom:12px;">Tu as été banni de Schoolmes</div>
+      <div><span style="color:#9ca3af;">Raison :</span> <span style="color:#fbbf24;">${ban.reason || 'Non précisée'}</span></div>
+      <div><span style="color:#9ca3af;">Banni par :</span> ${ban.bannedBy || 'Admin'}</div>
+      <div><span style="color:#9ca3af;">Date :</span> ${ban.bannedAt ? new Date(ban.bannedAt).toLocaleString('fr-FR') : '—'}${expireText}</div>
+    </div>
+    <div style="font-size:0.5rem;color:#6b7280;margin-top:20px;">Si tu penses que c'est une erreur, contacte un administrateur.</div>
+    <button class="danger" style="margin-top:20px;" onclick="document.getElementById('banScreen').remove();showScreen('loginScreen');">↩ Retour</button>
+  `;
+  document.body.appendChild(div);
+}
+
+async function openAdminBan() {
+  if (!player?.isAdmin || !firebaseReady) {
+    alert('❌ Firebase requis.'); return;
+  }
+  // Charger la liste des joueurs + bans actuels
+  const [snapLb, snapBans] = await Promise.all([
+    database.ref('leaderboard').once('value'),
+    database.ref('bans').once('value').catch(() => ({ val: () => ({}) }))
+  ]);
+  const lbData = snapLb.val() || {};
+  const bansData = snapBans.val ? (snapBans.val() || {}) : {};
+
+  const entries = Object.entries(lbData)
+    .filter(([, p]) => p && p.username && !p.isAdmin)
+    .sort((a, b) => (a[1].username || '').localeCompare(b[1].username || ''));
+
+  const overlay = document.createElement('div');
+  overlay.id = 'adminBanOverlay';
+  overlay.className = 'admin-ban-modal';
+
+  overlay.innerHTML = `
+    <div style="max-width:700px;margin:0 auto;background:#1a0a0a;border:3px solid #ef4444;border-radius:20px;padding:25px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h2 style="color:#ef4444;font-size:0.9rem;">🔨 GESTION DES BANS</h2>
+        <button class="danger" style="margin:0;" onclick="document.getElementById('adminBanOverlay').remove()">✖</button>
+      </div>
+
+      <div style="background:rgba(255,255,255,0.05);border-radius:12px;padding:15px;margin-bottom:20px;">
+        <div style="font-size:0.6rem;color:#fbbf24;margin-bottom:12px;">🔨 BANNIR UN JOUEUR</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <select id="ban_target" style="background:#000;color:#fff;border:2px solid #ef4444;border-radius:8px;padding:10px;font-family:'Press Start 2P';font-size:0.55rem;">
+            ${entries.map(([uid, p]) => {
+              const isBanned = !!bansData[uid];
+              return `<option value="${uid}" data-banned="${isBanned}">${isBanned ? '🚫 ' : ''}${p.username} (Niv.${p.maxLevel||1})</option>`;
+            }).join('')}
+          </select>
+          <input id="ban_reason" type="text" placeholder="Raison du ban (ex: triche, insultes...)" style="background:#000;color:#fff;border:2px solid #ef4444;border-radius:8px;padding:10px;font-family:'Press Start 2P';font-size:0.55rem;width:100%;box-sizing:border-box;">
+          <div style="display:flex;gap:10px;align-items:center;">
+            <label style="font-size:0.5rem;color:#9ca3af;">Durée :</label>
+            <select id="ban_duration" style="background:#000;color:#fff;border:2px solid #ef4444;border-radius:8px;padding:8px;font-family:'Press Start 2P';font-size:0.5rem;flex:1;">
+              <option value="0">⛔ Permanent</option>
+              <option value="1">1 jour</option>
+              <option value="3">3 jours</option>
+              <option value="7">7 jours</option>
+              <option value="30">30 jours</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="danger" style="flex:1;padding:12px;" onclick="executeBan()">🔨 BANNIR</button>
+            <button style="flex:1;padding:12px;background:linear-gradient(135deg,#10b981,#059669);" onclick="executeUnban()">✅ DÉBANNIR</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size:0.6rem;color:#fbbf24;margin-bottom:10px;">📋 JOUEURS BANNIS (${Object.keys(bansData).length})</div>
+      <div style="max-height:250px;overflow-y:auto;" id="banListContainer">
+        ${Object.keys(bansData).length === 0 
+          ? '<div style="font-size:0.55rem;color:#6b7280;text-align:center;padding:20px;">Aucun joueur banni</div>'
+          : Object.entries(bansData).map(([uid, ban]) => `
+            <div class="admin-ban-card is-banned">
+              <div>
+                <div style="color:#ef4444;font-weight:bold;">${ban.username || uid}</div>
+                <div style="color:#9ca3af;margin-top:4px;">Raison : ${ban.reason || '—'}</div>
+                <div style="color:#6b7280;margin-top:2px;">${ban.expiresAt ? 'Expire : ' + new Date(ban.expiresAt).toLocaleDateString('fr-FR') : 'Permanent'}</div>
+              </div>
+              <button style="background:linear-gradient(135deg,#10b981,#059669);padding:6px 10px;font-size:0.45rem;margin:0;" onclick="quickUnban('${uid}', this)">✅ Débannir</button>
+            </div>
+          `).join('')
+        }
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+async function executeBan() {
+  const uid = document.getElementById('ban_target').value;
+  const reason = document.getElementById('ban_reason').value.trim();
+  const duration = parseInt(document.getElementById('ban_duration').value);
+  const lbSnap = await database.ref('leaderboard/' + uid).once('value');
+  const targetData = lbSnap.val() || {};
+
+  if (!uid) { alert('⚠️ Sélectionne un joueur.'); return; }
+  if (!reason) { alert('⚠️ Entre une raison pour le ban.'); return; }
+  if (!confirm(`🔨 Bannir ${targetData.username || uid} ?
+Raison : ${reason}${duration > 0 ? '
+Durée : ' + duration + ' jour(s)' : '
+Durée : Permanent'}`)) return;
+
+  const banData = {
+    username: targetData.username || uid,
+    reason: reason,
+    bannedAt: Date.now(),
+    bannedBy: player.username,
+    expiresAt: duration > 0 ? Date.now() + duration * 86400000 : null
+  };
+
+  try {
+    await database.ref('bans/' + uid).set(banData);
+    // Mettre à jour le leaderboard avec le flag banni
+    await database.ref('leaderboard/' + uid).update({ isBanned: true });
+    alert(`✅ ${banData.username} a été banni !`);
+    document.getElementById('adminBanOverlay').remove();
+  } catch(e) {
+    alert('❌ Erreur : ' + e.message);
+  }
+}
+
+async function executeUnban() {
+  const uid = document.getElementById('ban_target').value;
+  const lbSnap = await database.ref('leaderboard/' + uid).once('value');
+  const targetData = lbSnap.val() || {};
+  if (!uid) { alert('⚠️ Sélectionne un joueur.'); return; }
+  if (!confirm(`✅ Débannir ${targetData.username || uid} ?`)) return;
+  try {
+    await database.ref('bans/' + uid).remove();
+    await database.ref('leaderboard/' + uid).update({ isBanned: false });
+    alert(`✅ ${targetData.username || uid} a été débanni !`);
+    document.getElementById('adminBanOverlay').remove();
+  } catch(e) {
+    alert('❌ Erreur : ' + e.message);
+  }
+}
+
+async function quickUnban(uid, btn) {
+  if (!confirm('✅ Débannir ce joueur ?')) return;
+  try {
+    await database.ref('bans/' + uid).remove();
+    await database.ref('leaderboard/' + uid).update({ isBanned: false });
+    btn.closest('.admin-ban-card').remove();
+  } catch(e) {
+    alert('❌ Erreur : ' + e.message);
   }
 }
 
@@ -2428,6 +2669,7 @@ function useSkipBonus() {
     // Charger la question suivante directement
     currentQuestion = generateQuestion(currentLevel);
     selectedChoiceValue = null;
+    startQuestionTimer();
     document.getElementById('quizLevelTitle').textContent = `Niveau ${currentLevel}`;
     document.getElementById('quizFeedback').innerHTML = '';
     document.getElementById('questionText').textContent = currentQuestion.question;
@@ -2679,6 +2921,7 @@ function submitAnswer() {
     setTimeout(() => {
       currentQuestion = generateQuestion(currentLevel);
       selectedChoiceValue = null;
+      startQuestionTimer();
       document.getElementById('questionText').textContent = currentQuestion.question;
       document.getElementById('quizFeedback').innerHTML = '';
       const choiceDiv = document.getElementById('choiceButtons');
@@ -2726,6 +2969,7 @@ function skipQuestion() {
       // Charger directement la question suivante sans repasser par la carte
       currentQuestion = generateQuestion(currentLevel);
       selectedChoiceValue = null;
+      startQuestionTimer();
       document.getElementById('quizLevelTitle').textContent = `Niveau ${currentLevel}`;
       document.getElementById('quizFeedback').innerHTML = '';
       document.getElementById('questionText').textContent = currentQuestion.question;
@@ -2793,15 +3037,10 @@ function checkSpecialBadges() {
   if (isAmiAdmin) player.isAmiAdmin = true;
   
   // Badge OJ (Ancien joueur — déjà présent dans la DB = a des stats ou un compte)
-  const isOldPlayer = player.stats && (player.stats.questionsAnswered > 0 || player.maxLevel > 1) 
-    && !player._ojChecked;
-  if (!player._ojChecked && !player.isAdmin) {
-    player._ojChecked = true;
-    if (!player.badges.includes(OJ_BADGE)) {
-      // On donne OJ si le joueur existait avant (a déjà joué)
-      if (player.maxLevel > 1 || (player.stats && player.stats.questionsAnswered > 0)) {
-        player.badges.push(OJ_BADGE);
-      }
+  // Badge OJ pour les anciens joueurs (ont déjà joué)
+  if (!player.isAdmin && !player.badges.includes(OJ_BADGE)) {
+    if ((player.maxLevel > 1) || (player.stats && player.stats.questionsAnswered > 0)) {
+      player.badges.push(OJ_BADGE);
     }
   }
 }
@@ -2844,7 +3083,8 @@ const AC = {
     // Détection de gain de pièces suspect
     const coinDiff = (player.coins || 0) - (this._lastCoins || 0);
     const timeDiff = now - (this._lastSave || now);
-    if (this._lastCoins > 0 && coinDiff > this.MAX_COINS_PER_SAVE && timeDiff < 5000) {
+    const coinsThreshold = player.isAmiAdmin ? this.MAX_COINS_PER_SAVE * 2 : this.MAX_COINS_PER_SAVE;
+    if (this._lastCoins > 0 && coinDiff > coinsThreshold && timeDiff < 5000) {
       console.warn('[AC] Gain de pièces suspect:', coinDiff, 'en', timeDiff, 'ms');
       this._flag('coin_hack', coinDiff);
     }
@@ -2867,10 +3107,10 @@ const AC = {
 };
 
 // Hook savePlayer pour l'anticheat
-const _origSavePlayer = savePlayer;
+const _origSavePlayerAC = savePlayer;
 savePlayer = async function() {
   AC.check();
-  return _origSavePlayer();
+  return _origSavePlayerAC();
 };
 
 // ====== JOUEURS CONNECTÉS ======
@@ -2997,7 +3237,7 @@ function saveSetting(key, value) {
 
 function applySettings() {
   const s = getSettings();
-  // Applique les réglages visuels
+  // Taille du texte
   if (s.fontSize === 'large') {
     document.body.style.fontSize = '110%';
   } else if (s.fontSize === 'small') {
@@ -3005,6 +3245,10 @@ function applySettings() {
   } else {
     document.body.style.fontSize = '';
   }
+  // Thèmes
+  document.body.classList.remove('theme-dark','theme-neon');
+  if (s.theme === 'dark') document.body.classList.add('theme-dark');
+  else if (s.theme === 'neon') document.body.classList.add('theme-neon');
 }
 
 function renderSettings() {
@@ -3073,7 +3317,7 @@ function renderSettings() {
           <div class="settings-label">📋 Informations</div>
           <div class="settings-desc">Version du jeu et infos</div>
         </div>
-        <div style="font-size:0.5rem;color:#9ca3af;">v2.0</div>
+        <div style="font-size:0.5rem;color:#9ca3af;">v1.3.0</div>
       </div>
       ${player?.isAdmin ? `
       <div style="font-size:0.7rem;color:#fbbf24;margin:20px 0 8px;">👑 ADMIN</div>
@@ -3329,22 +3573,66 @@ function randomAvatar() {
 // ========================================
 // CLASSEMENT EN LIGNE — lit /leaderboard (public)
 // ========================================
-// ⚠️ RÈGLES FIREBASE REQUISES dans ta console Firebase :
-// {
-//   "rules": {
-//     "players": { "$uid": { ".read": "$uid === auth.uid", ".write": "$uid === auth.uid" } },
-//     "leaderboard": { ".read": true, ".write": "auth != null" },
-//     "rooms": { ".read": "auth != null", ".write": "auth != null" },
-//     "presence": { ".read": "auth != null", ".write": "auth != null" },
-//     "challenges": { "$uid": { ".read": "$uid === auth.uid", ".write": "auth != null" } }
-//   }
-// }
+// ⚠️ RÈGLES FIREBASE — Colle ceci dans Firebase Console > Realtime Database > Règles :
+/*
+====================================================
+RÈGLES COMPLÈTES v1.3 — COPIER-COLLER INTÉGRAL
+====================================================
+{
+  "rules": {
+    "players": {
+      "$uid": {
+        ".read": "auth != null && ($uid === auth.uid || root.child('players/admin_titi/isAdmin').val() === true || root.child('players/admin_darius/isAdmin').val() === true)",
+        ".write": "auth != null && ($uid === auth.uid || root.child('players/admin_titi/isAdmin').val() === true || root.child('players/admin_darius/isAdmin').val() === true)"
+      }
+    },
+    "leaderboard": {
+      ".read": true,
+      "$uid": {
+        ".write": "auth != null && ($uid === auth.uid || root.child('players/admin_titi/isAdmin').val() === true || root.child('players/admin_darius/isAdmin').val() === true)"
+      }
+    },
+    "bans": {
+      ".read": "auth != null && (root.child('players/admin_titi/isAdmin').val() === true || root.child('players/admin_darius/isAdmin').val() === true)",
+      "$uid": {
+        ".read": "auth != null && $uid === auth.uid",
+        ".write": "auth != null && (root.child('players/admin_titi/isAdmin').val() === true || root.child('players/admin_darius/isAdmin').val() === true)"
+      }
+    },
+    "rooms": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "presence": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "challenges": {
+      "$uid": {
+        ".read": "auth != null && $uid === auth.uid",
+        ".write": "auth != null"
+      }
+    },
+    "anticheat": {
+      ".read": "auth != null && (root.child('players/admin_titi/isAdmin').val() === true || root.child('players/admin_darius/isAdmin').val() === true)",
+      ".write": "auth != null"
+    }
+  }
+}
+====================================================
+EXPLICATION :
+- players/$uid : chaque joueur lit/écrit ses propres données + les admins peuvent tout lire/écrire
+- leaderboard : lecture publique (tout le monde), écriture par le propriétaire ou admins
+- bans : les admins lisent TOUT le nœud, chaque joueur peut lire uniquement SON ban (pour la vérification au login), seuls les admins peuvent écrire
+- anticheat : lecture/écriture admins uniquement
+====================================================
+*/
 
 let currentLbSort = 'maxLevel';
 
 // Mettre à jour le leaderboard public après chaque sauvegarde
 async function updateLeaderboardEntry() {
-  if (!firebaseReady || !currentUserId || currentUserId.startsWith('local_') || (currentUserId && currentUserId.startsWith('admin_'))) return;
+  if (!firebaseReady || !currentUserId || currentUserId.startsWith('local_')) return;
   try {
     await database.ref('leaderboard/' + currentUserId).set({
       username: player.username,
@@ -3355,7 +3643,8 @@ async function updateLeaderboardEntry() {
       bossesDefeated: player.stats?.bossesDefeated || 0,
       avatarData: player.avatarData || null,
       playTime: player.playTime || 0,
-      badges: player.badges || []
+      badges: player.badges || [],
+      isAdmin: player.isAdmin === true
     });
   } catch(e) { /* silencieux */ }
 }
@@ -3385,14 +3674,11 @@ async function renderLeaderboard(sortBy) {
   }
 
   try {
-    // Charger admins et joueurs séparément
-    const [snapLb, snapAdmins] = await Promise.all([
-      database.ref('leaderboard').once('value'),
-      database.ref('players').orderByChild('isAdmin').equalTo(true).once('value').catch(() => ({ val: () => null }))
-    ]);
+    // Charger tout depuis /leaderboard (admins inclus grâce au flag isAdmin)
+    const snapLb = await database.ref('leaderboard').once('value');
     
     const lbData = snapLb.val();
-    if (!lbData) { loadEl.textContent = '🏜️ Aucun joueur encore inscrit au classement !'; return; }
+    if (!lbData) { loadEl.textContent = '🏜️ Aucun joueur encore inscrit au classement !'; loadEl.style.display='block'; return; }
 
     loadEl.style.display = 'none';
 
@@ -3400,24 +3686,14 @@ async function renderLeaderboard(sortBy) {
     const icons   = { maxLevel: '🗺️', level: '⭐', coins: '💰' };
     const rankIcons = ['🥇','🥈','🥉'];
 
-    // Séparer admins et joueurs
+    // Séparer admins et joueurs directement depuis /leaderboard
     const adminPlayers = [];
     const normalPlayers = [];
     
-    Object.values(lbData).filter(p => p.username).forEach(p => {
-      if (p.isAdmin) adminPlayers.push(p);
+    Object.values(lbData).filter(p => p && p.username).forEach(p => {
+      if (p.isAdmin === true) adminPlayers.push(p);
       else normalPlayers.push(p);
     });
-    
-    // Ajouter admins depuis players Firebase
-    const adminSnap = snapAdmins.val ? snapAdmins.val() : null;
-    if (adminSnap) {
-      Object.values(adminSnap).forEach(a => {
-        if (a.isAdmin && !adminPlayers.find(p => p.username === a.username)) {
-          adminPlayers.push({ ...a, isAdmin: true });
-        }
-      });
-    }
     
     normalPlayers.sort((a, b) => (b[sortBy] || 0) - (a[sortBy] || 0));
     adminPlayers.sort((a, b) => (b[sortBy] || 0) - (a[sortBy] || 0));
@@ -3443,7 +3719,7 @@ async function renderLeaderboard(sortBy) {
         <div class="lb-rank">${showRankIcon && rank <= 3 ? rankIcons[rank-1] : '#' + rank}</div>
         <canvas id="${avatarCanvasId}" class="mini-avatar-canvas lb-avatar" width="36" height="36" style="${p.avatarData ? '' : 'display:none;'}"></canvas>
         <div class="lb-info">
-          <div class="lb-name">${p.username}${isMe ? ' <span style="color:#10b981;">◀ toi</span>' : ''}${p.isAdmin ? ' <span style="font-size:0.4rem;background:#fbbf24;color:#000;padding:2px 5px;border-radius:5px;">ADMIN</span>' : ''}</div>
+          <div class="lb-name">${p.username}${isMe ? ' <span style="color:#10b981;">◀ toi</span>' : ''}${p.isAdmin ? ' <span style="font-size:0.4rem;background:#fbbf24;color:#000;padding:2px 5px;border-radius:5px;">ADMIN</span>' : ''}${p.isBanned ? ' <span style="font-size:0.4rem;background:#ef4444;color:#fff;padding:2px 5px;border-radius:5px;">🚫 BANNI</span>' : ''}</div>
           <div style="margin:3px 0;">${badgesHtml}</div>
           <div class="lb-stats">Niv.${p.level||1} &nbsp;•&nbsp; ${p.questionsAnswered||0} Q &nbsp;•&nbsp; ${p.bossesDefeated||0} boss &nbsp;•&nbsp; ⏱️${formatPlayTime(p.playTime)}</div>
         </div>
@@ -3524,7 +3800,12 @@ function updateHomeScreen() {
 
   let badgesHTML = '';
   if (player.isAdmin) badgesHTML += '<div class="badge admin">👑 ADMIN</div>';
-  player.badges.forEach(b => badgesHTML += `<div class="badge">${b}</div>`);
+  (player.badges || []).forEach(b => {
+    let cls = 'badge';
+    if (b === '💗 Ami(e) des Admins') cls = 'badge ami-admin';
+    else if (b === '🎖️ OJ') cls = 'badge oj';
+    badgesHTML += `<div class="${cls}">${b}</div>`;
+  });
   
   // Prestige badge
   if (player.prestigeLevel) badgesHTML += `<span class="prestige-badge">⭐ Prestige ${player.prestigeLevel}</span>`;
@@ -3555,6 +3836,7 @@ function updateHomeScreen() {
         <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px;">
           <button class="gold" onclick="openAdminGive()">🎁 Donner à un joueur</button>
           <button class="gold" onclick="adminGiveAll()">🌍 Donner à TOUS</button>
+          <button class="danger" onclick="openAdminBan()">🔨 Bannir / Débannir</button>
           <button class="danger" onclick="adminReset()">🔄 Reset local</button>
           <button style="background:linear-gradient(135deg,#7c3aed,#6d28d9);" onclick="triggerRandomEvent()">⚡ Déclencher Événement</button>
           <button style="background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#000;" onclick="openPrestigeModal()">⭐ Test Prestige</button>
@@ -5283,9 +5565,9 @@ updateHomeScreen = function() {
     player._presenceStarted = true;
     startPresence();
   }
-  // Démarrer le tracking du temps de jeu
-  if (player && !player._ptStarted) {
-    player._ptStarted = true;
+  // Démarrer le tracking du temps de jeu (une seule fois par session)
+  if (player && !window._ptStarted) {
+    window._ptStarted = true;
     startPlayTimeTracking();
   }
   // Vérifier badges spéciaux
