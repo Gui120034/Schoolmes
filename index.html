@@ -337,6 +337,82 @@ input {
   color: #000;
   font-weight: bold;
 }
+.badge.ami-admin {
+  background: linear-gradient(135deg, #ec4899, #be185d);
+  color: #fff;
+  border: 2px solid #fbbf24;
+  animation: amiPulse 2s infinite;
+}
+.badge.oj {
+  background: linear-gradient(135deg, #06b6d4, #0284c7);
+  color: #fff;
+  border: 2px solid #fff;
+}
+@keyframes amiPulse {
+  0%,100% { box-shadow: 0 0 5px rgba(236,72,153,0.5); }
+  50% { box-shadow: 0 0 20px rgba(236,72,153,0.9); }
+}
+.lb-section-title {
+  font-size: 0.75rem;
+  color: #fbbf24;
+  padding: 10px 15px;
+  background: rgba(251,191,36,0.1);
+  border-radius: 10px;
+  border: 2px solid rgba(251,191,36,0.3);
+  margin: 15px 0 8px;
+  text-align: center;
+}
+.lb-section-title.admin-section { background: rgba(251,191,36,0.2); border-color: #fbbf24; }
+.lb-section-title.players-section { background: rgba(99,102,241,0.15); border-color: #6366f1; color: #818cf8; }
+.online-player-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 15px;
+  margin: 8px 0;
+  background: rgba(0,0,0,0.5);
+  border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.1);
+  transition: all 0.3s;
+}
+.online-player-card.is-online { border-color: rgba(16,185,129,0.5); }
+.online-player-card.is-offline { opacity: 0.6; }
+.settings-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px;
+  background: rgba(0,0,0,0.4);
+  border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.1);
+  margin: 10px 0;
+}
+.settings-label { font-size: 0.65rem; color: #fbbf24; }
+.settings-desc { font-size: 0.5rem; color: #9ca3af; margin-top: 4px; }
+.toggle-switch {
+  position: relative;
+  width: 52px;
+  height: 28px;
+  flex-shrink: 0;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+  background: #374151; border-radius: 28px; transition: 0.4s;
+}
+.toggle-slider:before {
+  position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px;
+  background: white; border-radius: 50%; transition: 0.4s;
+}
+input:checked + .toggle-slider { background: #10b981; }
+input:checked + .toggle-slider:before { transform: translateX(24px); }
+.settings-select {
+  background: rgba(0,0,0,0.7); color: white; border: 2px solid #fbbf24;
+  border-radius: 8px; padding: 8px 12px; font-family: 'Press Start 2P', cursive;
+  font-size: 0.6rem; cursor: pointer;
+}
+/* Anticheat hidden flag */
+.ac-hidden { display: none !important; }
 
 .pixel-grid {
   display: -ms-grid;
@@ -1059,6 +1135,11 @@ input {
 <!-- AUTO-SAVE INDICATOR -->
 <div id="autosaveIndicator">⚙️...</div>
 
+<!-- SETTINGS GEAR FIXED BUTTON -->
+<div id="settingsGearBtn" style="position:fixed;top:15px;right:15px;z-index:8000;display:none;">
+  <button onclick="showScreen('settingsScreen'); renderSettings();" style="margin:0;padding:8px 12px;font-size:0.9rem;border-radius:50%;width:44px;height:44px;background:rgba(0,0,0,0.7);border:2px solid #fbbf24;">⚙️</button>
+</div>
+
 <!-- COMBO DISPLAY -->
 <div id="comboDisplay"></div>
 
@@ -1166,6 +1247,8 @@ input {
     <button style="background:linear-gradient(135deg,#10b981,#059669);" onclick="manualSave()">💾 Sauvegarder</button>
     <button style="background:linear-gradient(135deg,#f59e0b,#d97706);" onclick="openTalentTree()">🌳 Talents</button>
     <button style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);" onclick="openQuestsModal()">📋 Quêtes</button>
+    <button style="background:linear-gradient(135deg,#0ea5e9,#0284c7);" onclick="showScreen('onlinePlayersScreen'); renderOnlinePlayers();">👥 Joueurs connectés</button>
+    <button style="background:linear-gradient(135deg,#6b7280,#4b5563);" onclick="showScreen('settingsScreen'); renderSettings();">⚙️ Réglages</button>
     <button class="danger" onclick="logout()">🚪 Déconnexion</button>
   </div>
 </div>
@@ -1184,6 +1267,27 @@ input {
   <div id="lbLoading" style="text-align:center; padding:30px; color:#9ca3af; font-size:0.7rem;">⏳ Chargement...</div>
   <div class="leaderboard-online" id="leaderboardList"></div>
   <div id="myRank" style="text-align:center; margin-top:15px; font-size:0.65rem; color:#fbbf24;"></div>
+</div>
+
+<!-- JOUEURS CONNECTÉS -->
+<div id="onlinePlayersScreen" class="screen">
+  <button class="danger" onclick="showScreen('homeScreen'); updateHomeScreen();">⬅️ Retour</button>
+  <h2 class="game-title">👥 JOUEURS</h2>
+  <div style="display:flex;gap:8px;justify-content:center;margin:15px 0;flex-wrap:wrap;">
+    <button id="opTabOnline" class="primary" onclick="switchOpTab('online')">🟢 En ligne</button>
+    <button id="opTabAll" onclick="switchOpTab('all')">👥 Tous les joueurs</button>
+    <button onclick="renderOnlinePlayers()">🔄 Actualiser</button>
+  </div>
+  <div id="onlinePlayersList" style="max-height:600px;overflow-y:auto;">
+    <div style="text-align:center;color:#9ca3af;font-size:0.6rem;padding:30px;">⏳ Chargement...</div>
+  </div>
+</div>
+
+<!-- RÉGLAGES -->
+<div id="settingsScreen" class="screen">
+  <button class="danger" onclick="showScreen('homeScreen'); updateHomeScreen();">⬅️ Retour</button>
+  <h2 class="game-title">⚙️ RÉGLAGES</h2>
+  <div id="settingsContent"></div>
 </div>
 
 <!-- GAME -->
@@ -1593,7 +1697,37 @@ function generateQuestion(level) {
 
 // QUESTIONS — SYSTÈME GÉNÉRATEUR 10 000 QUESTIONS
 function getQuestionForLevel(level, isBoss) {
-  // Base de données de questions par catégories
+  // Sélection aléatoire de matière avec progression de difficulté
+  // Toutes les matières disponibles par niveau de difficulté
+  const allSubjects = ['math', 'geo', 'sciences', 'culture', 'histoire', 'sports', 'langues'];
+  
+  // Plus le niveau est élevé, plus les questions difficiles apparaissent souvent
+  const difficultyLevel = Math.min(10, Math.floor(level / 1000) + 1);
+  
+  // Questions triées par difficulté
+  const easySubjects = ['culture', 'sports', 'langues'];
+  const mediumSubjects = ['math', 'geo'];
+  const hardSubjects = ['sciences', 'histoire'];
+  
+  // Probabilités selon le niveau
+  let subjectPool;
+  if (difficultyLevel <= 2) {
+    subjectPool = [...easySubjects, ...easySubjects, ...mediumSubjects]; // Surtout facile
+  } else if (difficultyLevel <= 5) {
+    subjectPool = [...easySubjects, ...mediumSubjects, ...mediumSubjects, ...hardSubjects]; // Mixte
+  } else if (difficultyLevel <= 8) {
+    subjectPool = [...mediumSubjects, ...hardSubjects, ...hardSubjects, 'math']; // Difficile
+  } else {
+    subjectPool = [...hardSubjects, 'math', 'sciences', 'geo', 'histoire']; // Très difficile
+  }
+  
+  // Sélection aléatoire de la matière (différente de la dernière utilisée)
+  let chosenSubject;
+  do {
+    chosenSubject = subjectPool[Math.floor(Math.random() * subjectPool.length)];
+  } while (chosenSubject === window._lastQuestionSubject && subjectPool.length > 1);
+  window._lastQuestionSubject = chosenSubject;
+
   const questionBank = {
     // MATHÉMATIQUES (2000 questions)
     math: {
@@ -1754,53 +1888,82 @@ function getQuestionForLevel(level, isBoss) {
     ]
   };
 
-  // Aplatir toutes les questions
-  const allQuestions = [];
-  
-  // Mathématiques
-  allQuestions.push(...questionBank.math.additions);
-  allQuestions.push(...questionBank.math.soustractions);
-  allQuestions.push(...questionBank.math.multiplications);
-  allQuestions.push(...questionBank.math.divisions);
-  for (let i = 0; i < 100; i++) allQuestions.push(...questionBank.math.geometrie);
-  
-  // Géographie
-  for (let i = 0; i < 100; i++) {
-    allQuestions.push(...questionBank.geo.capitales);
-    allQuestions.push(...questionBank.geo.pays);
-    allQuestions.push(...questionBank.geo.oceans);
-  }
-  
-  // Sciences
-  for (let i = 0; i < 150; i++) {
-    allQuestions.push(...questionBank.sciences.astronomie);
-    allQuestions.push(...questionBank.sciences.corps_humain);
-    allQuestions.push(...questionBank.sciences.chimie);
-  }
-  
-  // Culture
-  for (let i = 0; i < 150; i++) {
-    allQuestions.push(...questionBank.culture.animaux);
-    allQuestions.push(...questionBank.culture.fruits);
-    allQuestions.push(...questionBank.culture.couleurs);
-    allQuestions.push(...questionBank.culture.temps);
-  }
-  
-  // Histoire, Sports, Langues
-  for (let i = 0; i < 200; i++) {
-    allQuestions.push(...questionBank.histoire);
-    allQuestions.push(...questionBank.sports);
-    allQuestions.push(...questionBank.langues);
-  }
+  // (questions sélectionnées dynamiquement ci-dessus)
 
-  // S'assurer qu'on a au moins 10000 questions
-  while (allQuestions.length < 10000) {
-    allQuestions.push(...allQuestions.slice(0, 1000));
+  // Construire le pool de questions pour la matière choisie avec génération dynamique selon niveau
+  let pool = [];
+  
+  // Paramètres de difficulté mathématique selon le niveau
+  const mathMax = Math.min(200, 10 + level * 2);
+  const multiMax = Math.min(30, 5 + Math.floor(level / 10));
+  
+  if (chosenSubject === 'math') {
+    // Additions simples niveau bas, puis plus complexe
+    if (difficultyLevel <= 3) {
+      for (let i = 0; i < 50; i++) {
+        const a = Math.floor(Math.random() * mathMax) + 1;
+        const b = Math.floor(Math.random() * mathMax) + 1;
+        pool.push({ type: 'text', question: `Combien font ${a} + ${b} ?`, answer: String(a + b) });
+      }
+      for (let i = 0; i < 30; i++) {
+        const a = Math.floor(Math.random() * 50) + 10;
+        const b = Math.floor(Math.random() * a);
+        pool.push({ type: 'text', question: `Combien font ${a} - ${b} ?`, answer: String(a - b) });
+      }
+      pool.push(...questionBank.math.geometrie);
+    } else if (difficultyLevel <= 6) {
+      for (let i = 0; i < 50; i++) {
+        const a = Math.floor(Math.random() * multiMax) + 1;
+        const b = Math.floor(Math.random() * multiMax) + 1;
+        pool.push({ type: 'text', question: `Combien font ${a} × ${b} ?`, answer: String(a * b) });
+      }
+      for (let i = 0; i < 30; i++) {
+        const b = Math.floor(Math.random() * 12) + 1;
+        const r = Math.floor(Math.random() * 20) + 1;
+        pool.push({ type: 'text', question: `Combien font ${b * r} ÷ ${b} ?`, answer: String(r) });
+      }
+      pool.push(...questionBank.math.geometrie);
+    } else {
+      // Niveau avancé: tout mélangé
+      pool.push(...questionBank.math.geometrie);
+      for (let i = 0; i < 30; i++) {
+        const a = Math.floor(Math.random() * 500) + 100;
+        const b = Math.floor(Math.random() * a);
+        pool.push({ type: 'text', question: `Combien font ${a} - ${b} ?`, answer: String(a - b) });
+        const c = Math.floor(Math.random() * 25) + 1;
+        const d = Math.floor(Math.random() * 25) + 1;
+        pool.push({ type: 'text', question: `Combien font ${c} × ${d} ?`, answer: String(c * d) });
+      }
+    }
+  } else if (chosenSubject === 'geo') {
+    pool.push(...questionBank.geo.capitales, ...questionBank.geo.pays, ...questionBank.geo.oceans);
+  } else if (chosenSubject === 'sciences') {
+    pool.push(...questionBank.sciences.astronomie, ...questionBank.sciences.corps_humain, ...questionBank.sciences.chimie);
+  } else if (chosenSubject === 'culture') {
+    pool.push(...questionBank.culture.animaux, ...questionBank.culture.fruits, ...questionBank.culture.couleurs, ...questionBank.culture.temps);
+  } else if (chosenSubject === 'histoire') {
+    pool.push(...questionBank.histoire);
+  } else if (chosenSubject === 'sports') {
+    pool.push(...questionBank.sports);
+  } else if (chosenSubject === 'langues') {
+    pool.push(...questionBank.langues);
   }
-
-  const idx = (level - 1) % allQuestions.length;
-  const q = allQuestions[idx];
-  return { id: `q${level}`, ...q };
+  
+  if (pool.length === 0) pool = [...questionBank.culture.animaux];
+  
+  // Boss: questions plus difficiles
+  if (isBoss) {
+    const hardPool = [
+      ...questionBank.sciences.astronomie,
+      ...questionBank.sciences.chimie,
+      ...questionBank.histoire,
+      ...questionBank.math.geometrie
+    ];
+    pool = hardPool.length > 0 ? hardPool : pool;
+  }
+  
+  const q = pool[Math.floor(Math.random() * pool.length)];
+  return { id: `q${level}_${chosenSubject}_${Math.random()}`, ...q };
 }
 
 function getBiome(level) {
@@ -1843,10 +2006,24 @@ async function login() {
       username: matchedAdmin.display, code: code, level: 1, xp: 0,
       coins: 999999, maxLevel: 10000, badges: ['👑 ADMIN'], isAdmin: true,
       inventory: { hints: 999, skips: 999, secondChances: 999, xpBoost: 999 },
-      avatarData: null, stats: { questionsAnswered: 0, bossesDefeated: 0 }
+      avatarData: null, stats: { questionsAnswered: 0, bossesDefeated: 0 },
+      playTime: 0, createdAt: Date.now()
     };
-    currentUserId = 'admin';
+    currentUserId = 'admin_' + matchedAdmin.username;
+    // Charger depuis Firebase si dispo
+    if (firebaseReady) {
+      try {
+        const snap = await database.ref('players/' + currentUserId).once('value');
+        if (snap.exists()) {
+          const saved = snap.val();
+          player = { ...player, ...saved, isAdmin: true, badges: saved.badges || ['👑 ADMIN'] };
+        } else {
+          await savePlayerToFirebase();
+        }
+      } catch(e) { /* fallback: utiliser les valeurs par défaut */ }
+    }
     startAutoSave();
+    startPlayTimeTracking();
     showScreen('homeScreen');
     updateHomeScreen();
     return;
@@ -1869,6 +2046,8 @@ async function login() {
       currentUserId = cred.user.uid;
       await loadPlayerFromFirebase(currentUserId);
       startAutoSave();
+      startPlayTimeTracking();
+      checkSpecialBadges();
       showScreen('homeScreen');
       updateHomeScreen();
     } catch (err) {
@@ -1884,6 +2063,8 @@ async function login() {
           };
           await savePlayerToFirebase();
           startAutoSave();
+          startPlayTimeTracking();
+          checkSpecialBadges();
           alert('🎉 Compte créé !');
           showScreen('homeScreen');
           updateHomeScreen();
@@ -1909,6 +2090,7 @@ function loginLocal(username, code) {
       player = accounts[key];
       if (!player.inventory) player.inventory = { hints: 0, skips: 0, secondChances: 0, xpBoost: 0 };
       currentUserId = 'local_' + key;
+      checkSpecialBadges();
       showScreen('homeScreen');
       updateHomeScreen();
     } else {
@@ -1919,25 +2101,31 @@ function loginLocal(username, code) {
       username: username, code: code, level: 1, xp: 0,
       coins: 100, maxLevel: 1, badges: [], isAdmin: false,
       inventory: { hints: 0, skips: 0, secondChances: 0, xpBoost: 0 },
-      avatarData: null, stats: { questionsAnswered: 0, bossesDefeated: 0 }
+      avatarData: null, stats: { questionsAnswered: 0, bossesDefeated: 0 },
+      playTime: 0, createdAt: Date.now()
     };
     accounts[key] = player;
     localStorage.setItem('schoolmesAccounts', JSON.stringify(accounts));
     currentUserId = 'local_' + key;
+    checkSpecialBadges();
     alert('🎉 Compte créé (mode local) !');
     showScreen('homeScreen');
     updateHomeScreen();
   }
   startAutoSave();
+  startPlayTimeTracking();
 }
 
 function logout() {
   if (confirm('🚪 Te déconnecter ?')) {
     savePlayer();
     if (autoSaveTimer) clearInterval(autoSaveTimer);
+    if (_playTimeInterval) clearInterval(_playTimeInterval);
     if (firebaseReady && auth) auth.signOut();
     player = null;
     currentUserId = null;
+    const gearBtn = document.getElementById('settingsGearBtn');
+    if (gearBtn) gearBtn.style.display = 'none';
     showScreen('loginScreen');
   }
 }
@@ -2008,7 +2196,7 @@ function loadPlayerLocal() {
 
 // Fonction de sauvegarde unifiée
 async function savePlayer() {
-  if (firebaseReady && currentUserId && !currentUserId.startsWith('local_') && currentUserId !== 'admin') {
+  if (firebaseReady && currentUserId && !currentUserId.startsWith('local_')) {
     await savePlayerToFirebase();
   } else {
     savePlayerLocal();
@@ -2105,6 +2293,7 @@ function startQuiz(level) {
   
   if (isBoss) {
     document.getElementById('quizBiomeInfo').innerHTML = '<span style="color:#ef4444; font-size:1.2rem;">👹 BOSS - Récompenses x5</span>';
+    playBossSound();
   } else {
     document.getElementById('quizBiomeInfo').innerHTML = `${biome.emoji} ${biome.name.toUpperCase()}`;
   }
@@ -2156,8 +2345,10 @@ function selectChoice(value, btnElement) {
   // Sélectionner celui-ci
   btnElement.classList.add('selected');
   selectedChoiceValue = value;
-  // Auto-submit après sélection
-  setTimeout(() => submitAnswer(), 500);
+  // Auto-submit selon réglages
+  if (getSettings().autoSubmit) {
+    setTimeout(() => submitAnswer(), 500);
+  }
 }
 
 function updateHeartsDisplay() {
@@ -2389,6 +2580,12 @@ function submitAnswer() {
     // Prestige bonus
     if (player.prestigeLevel) coinGain = Math.floor(coinGain * (1 + player.prestigeLevel * 0.5));
     
+    // Ami des Admins bonus: +10% XP et pièces
+    if (isAmiAdmin()) {
+      xpGain = Math.floor(xpGain * 1.1);
+      coinGain = Math.floor(coinGain * 1.1);
+    }
+    
     player.xp += xpGain;
     player.coins += coinGain;
     player.stats.questionsAnswered++;
@@ -2407,6 +2604,7 @@ function submitAnswer() {
       player.xp -= xpNeeded;
       checkBadges();
       checkTalentPoints();
+      playLevelUpSound();
     }
     
     if (currentLevel >= player.maxLevel) player.maxLevel = currentLevel + 1;
@@ -2572,6 +2770,321 @@ function checkBadges() {
       player.badges.push(badge);
     }
   });
+  
+  checkSpecialBadges();
+}
+
+// ====== BADGES SPÉCIAUX ======
+const AMI_ADMIN_PSEUDOS = ['lapro34', 'le 34290', 'le34290'];
+const AMI_ADMIN_BADGE = '💗 Ami(e) des Admins';
+const OJ_BADGE = '🎖️ OJ';
+
+function checkSpecialBadges() {
+  if (!player) return;
+  if (!player.badges) player.badges = [];
+  
+  // Badge Ami(e) des Admins
+  const uLow = (player.username || '').toLowerCase().replace(/\s+/g,'');
+  const isAmiAdmin = AMI_ADMIN_PSEUDOS.some(p => uLow === p.replace(/\s+/g,''));
+  if (isAmiAdmin && !player.badges.includes(AMI_ADMIN_BADGE)) {
+    player.badges.push(AMI_ADMIN_BADGE);
+    player.isAmiAdmin = true;
+  }
+  if (isAmiAdmin) player.isAmiAdmin = true;
+  
+  // Badge OJ (Ancien joueur — déjà présent dans la DB = a des stats ou un compte)
+  const isOldPlayer = player.stats && (player.stats.questionsAnswered > 0 || player.maxLevel > 1) 
+    && !player._ojChecked;
+  if (!player._ojChecked && !player.isAdmin) {
+    player._ojChecked = true;
+    if (!player.badges.includes(OJ_BADGE)) {
+      // On donne OJ si le joueur existait avant (a déjà joué)
+      if (player.maxLevel > 1 || (player.stats && player.stats.questionsAnswered > 0)) {
+        player.badges.push(OJ_BADGE);
+      }
+    }
+  }
+}
+
+function isAmiAdmin() {
+  return player && player.isAmiAdmin === true;
+}
+
+// ====== TEMPS DE JEU ======
+let _playTimeInterval = null;
+
+function startPlayTimeTracking() {
+  if (_playTimeInterval) clearInterval(_playTimeInterval);
+  _playTimeInterval = setInterval(() => {
+    if (player) {
+      if (!player.playTime) player.playTime = 0;
+      player.playTime += 60000; // +1 minute par tick
+    }
+  }, 60000);
+}
+
+// ====== ANTICHEAT ======
+const AC = {
+  _lastCoins: 0, _lastLevel: 0, _lastSave: 0,
+  _coinsPerMin: [], _levelJumps: [],
+  MAX_COINS_PER_SAVE: 5000,    // Max pièces gagnées entre 2 sauvegardes
+  MAX_LEVEL_JUMP: 10,          // Max niveaux en 1 save
+  
+  check() {
+    if (!player || player.isAdmin) return;
+    const now = Date.now();
+    
+    // Détection de saut de niveaux suspect
+    const levelDiff = (player.maxLevel || 0) - (this._lastLevel || 0);
+    if (this._lastLevel > 0 && levelDiff > this.MAX_LEVEL_JUMP) {
+      console.warn('[AC] Saut de niveau suspect:', levelDiff);
+      this._flag('level_jump', levelDiff);
+    }
+    
+    // Détection de gain de pièces suspect
+    const coinDiff = (player.coins || 0) - (this._lastCoins || 0);
+    const timeDiff = now - (this._lastSave || now);
+    if (this._lastCoins > 0 && coinDiff > this.MAX_COINS_PER_SAVE && timeDiff < 5000) {
+      console.warn('[AC] Gain de pièces suspect:', coinDiff, 'en', timeDiff, 'ms');
+      this._flag('coin_hack', coinDiff);
+    }
+    
+    this._lastCoins = player.coins || 0;
+    this._lastLevel = player.maxLevel || 0;
+    this._lastSave = now;
+  },
+  
+  _flag(type, value) {
+    if (!player) return;
+    if (!player._acFlags) player._acFlags = [];
+    player._acFlags.push({ type, value, ts: Date.now() });
+    // Reporter à Firebase si dispo
+    if (firebaseReady && currentUserId && !currentUserId.startsWith('local_')) {
+      database.ref('anticheat/' + currentUserId).push({ type, value, ts: Date.now(), username: player.username })
+        .catch(() => {});
+    }
+  }
+};
+
+// Hook savePlayer pour l'anticheat
+const _origSavePlayer = savePlayer;
+savePlayer = async function() {
+  AC.check();
+  return _origSavePlayer();
+};
+
+// ====== JOUEURS CONNECTÉS ======
+let opCurrentTab = 'online';
+
+function switchOpTab(tab) {
+  opCurrentTab = tab;
+  document.getElementById('opTabOnline').className = tab === 'online' ? 'primary' : '';
+  document.getElementById('opTabAll').className = tab === 'all' ? 'primary' : '';
+  renderOnlinePlayers();
+}
+
+async function renderOnlinePlayers() {
+  const el = document.getElementById('onlinePlayersList');
+  if (!el) return;
+  if (!firebaseReady) {
+    el.innerHTML = '<div style="color:#9ca3af;font-size:0.6rem;text-align:center;padding:30px;">⚠️ Firebase requis pour voir les joueurs</div>';
+    return;
+  }
+  el.innerHTML = '<div style="text-align:center;color:#9ca3af;font-size:0.6rem;padding:30px;">⏳ Chargement...</div>';
+  
+  try {
+    const now = Date.now();
+    const ONLINE_THRESHOLD = 90000; // 90s
+    
+    if (opCurrentTab === 'online') {
+      const snap = await database.ref('presence').once('value');
+      const data = snap.val() || {};
+      const onlinePlayers = Object.entries(data)
+        .filter(([uid, p]) => p.online && (now - (p.ts || 0)) < ONLINE_THRESHOLD)
+        .map(([uid, p]) => ({ ...p, uid, isOnline: true }));
+      
+      if (onlinePlayers.length === 0) {
+        el.innerHTML = '<div style="text-align:center;color:#9ca3af;font-size:0.6rem;padding:40px;">😴 Aucun joueur en ligne actuellement</div>';
+        return;
+      }
+      renderOnlineList(el, onlinePlayers);
+    } else {
+      // Tous les joueurs (leaderboard + présence)
+      const [snapLb, snapPres] = await Promise.all([
+        database.ref('leaderboard').once('value'),
+        database.ref('presence').once('value')
+      ]);
+      const presData = snapPres.val() || {};
+      const lbData = snapLb.val() || {};
+      
+      const allPlayers = Object.entries(lbData)
+        .filter(([, p]) => p.username && !p.isAdmin)
+        .map(([uid, p]) => {
+          const pres = presData[uid];
+          const isOnline = pres && pres.online && (now - (pres.ts || 0)) < ONLINE_THRESHOLD;
+          return { ...p, uid, isOnline, lastSeen: pres?.ts || p.lastSave || 0 };
+        })
+        .sort((a, b) => (b.isOnline ? 1 : 0) - (a.isOnline ? 1 : 0) || b.lastSeen - a.lastSeen);
+      
+      renderOnlineList(el, allPlayers);
+    }
+  } catch(e) {
+    el.innerHTML = `<div style="color:#ef4444;font-size:0.6rem;text-align:center;padding:20px;">Erreur: ${e.message}</div>`;
+  }
+}
+
+function renderOnlineList(el, players) {
+  if (players.length === 0) {
+    el.innerHTML = '<div style="text-align:center;color:#9ca3af;font-size:0.6rem;padding:30px;">Aucun joueur trouvé</div>';
+    return;
+  }
+  el.innerHTML = players.map(p => {
+    const isMe = player && p.username === player.username;
+    const statusColor = p.isOnline ? '#10b981' : '#6b7280';
+    const statusText = p.isOnline ? '🟢 En ligne' : '⚫ Hors ligne';
+    const timeSince = p.lastSeen ? formatTimeSince(Date.now() - p.lastSeen) : '';
+    return `
+      <div class="online-player-card ${p.isOnline ? 'is-online' : 'is-offline'}">
+        <div style="width:12px;height:12px;border-radius:50%;background:${statusColor};box-shadow:0 0 8px ${statusColor};flex-shrink:0;"></div>
+        <div style="flex:1;">
+          <div style="font-size:0.65rem;color:#fbbf24;">${p.username}${isMe ? ' <span style="color:#10b981;">(toi)</span>' : ''}</div>
+          <div style="font-size:0.5rem;color:#9ca3af;">${statusText} &nbsp;•&nbsp; Niv.${p.level||1} &nbsp;•&nbsp; 🗺️${p.maxLevel||1}</div>
+          ${!p.isOnline && timeSince ? `<div style="font-size:0.45rem;color:#6b7280;">Vu il y a ${timeSince}</div>` : ''}
+        </div>
+        ${p.isOnline && !isMe && !player?.isAdmin ? `<button class="primary" style="margin:0;padding:6px 10px;font-size:0.45rem;" onclick="challengePlayer('${p.uid}','${p.username}')">⚔️ Défier</button>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function formatTimeSince(ms) {
+  const m = Math.floor(ms / 60000);
+  const h = Math.floor(ms / 3600000);
+  const d = Math.floor(ms / 86400000);
+  if (d > 0) return `${d}j`;
+  if (h > 0) return `${h}h`;
+  return `${m}min`;
+}
+
+// ====== RÉGLAGES ======
+const SETTINGS_DEFAULTS = {
+  soundEnabled: true,
+  musicEnabled: false,
+  particlesEnabled: true,
+  screenShakeEnabled: true,
+  timerEnabled: true,
+  autoSubmit: true,
+  theme: 'default',
+  fontSize: 'normal',
+  notifications: true,
+  comboDisplay: true,
+  language: 'fr',
+  hardMode: false
+};
+
+function getSettings() {
+  try {
+    return { ...SETTINGS_DEFAULTS, ...JSON.parse(localStorage.getItem('schoolmesSettings') || '{}') };
+  } catch(e) { return { ...SETTINGS_DEFAULTS }; }
+}
+
+function saveSetting(key, value) {
+  const s = getSettings();
+  s[key] = value;
+  localStorage.setItem('schoolmesSettings', JSON.stringify(s));
+  applySettings();
+}
+
+function applySettings() {
+  const s = getSettings();
+  // Applique les réglages visuels
+  if (s.fontSize === 'large') {
+    document.body.style.fontSize = '110%';
+  } else if (s.fontSize === 'small') {
+    document.body.style.fontSize = '85%';
+  } else {
+    document.body.style.fontSize = '';
+  }
+}
+
+function renderSettings() {
+  const el = document.getElementById('settingsContent');
+  if (!el) return;
+  const s = getSettings();
+  
+  const toggle = (key, label, desc) => `
+    <div class="settings-item">
+      <div>
+        <div class="settings-label">${label}</div>
+        <div class="settings-desc">${desc}</div>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" ${s[key] ? 'checked' : ''} onchange="saveSetting('${key}', this.checked)">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+  `;
+  
+  const select = (key, label, desc, options) => `
+    <div class="settings-item">
+      <div>
+        <div class="settings-label">${label}</div>
+        <div class="settings-desc">${desc}</div>
+      </div>
+      <select class="settings-select" onchange="saveSetting('${key}', this.value)">
+        ${options.map(o => `<option value="${o.v}" ${s[key]===o.v?'selected':''}>${o.l}</option>`).join('')}
+      </select>
+    </div>
+  `;
+  
+  el.innerHTML = `
+    <div style="max-width:600px;margin:0 auto;">
+      <div style="font-size:0.7rem;color:#fbbf24;margin:15px 0 8px;">🔊 AUDIO</div>
+      ${toggle('soundEnabled', '🔊 Sons', 'Active/désactive les effets sonores')}
+      ${toggle('musicEnabled', '🎵 Musique', 'Active/désactive la musique de fond')}
+      
+      <div style="font-size:0.7rem;color:#fbbf24;margin:20px 0 8px;">🎮 JEU</div>
+      ${toggle('particlesEnabled', '✨ Particules', 'Affiche les effets de particules')}
+      ${toggle('screenShakeEnabled', '📳 Vibration écran', 'Effet de secousse lors des erreurs')}
+      ${toggle('timerEnabled', '⏱️ Minuteur', 'Affiche le compte à rebours')}
+      ${toggle('autoSubmit', '⚡ Auto-valider QCM', 'Valide automatiquement les QCM en cliquant')}
+      ${toggle('comboDisplay', '🔥 Affichage combo', 'Affiche le compteur de combo')}
+      ${toggle('hardMode', '💀 Mode difficile', 'Réduit le temps de réponse à 8s')}
+      
+      <div style="font-size:0.7rem;color:#fbbf24;margin:20px 0 8px;">👁️ AFFICHAGE</div>
+      ${select('fontSize', '🔤 Taille du texte', 'Ajuste la taille globale du texte', [
+        {v:'small',l:'Petit'},{v:'normal',l:'Normal'},{v:'large',l:'Grand'}
+      ])}
+      ${select('theme', '🎨 Thème', 'Choisir l\'apparence', [
+        {v:'default',l:'Défaut (Bleu/Violet)'},{v:'dark',l:'Sombre'},{v:'neon',l:'Néon'}
+      ])}
+      ${toggle('notifications', '🔔 Notifications', 'Affiche les notifications de jeu')}
+      
+      <div style="font-size:0.7rem;color:#fbbf24;margin:20px 0 8px;">📊 COMPTE</div>
+      <div class="settings-item">
+        <div>
+          <div class="settings-label">💾 Sauvegarde manuelle</div>
+          <div class="settings-desc">Sauvegarder immédiatement ta progression</div>
+        </div>
+        <button onclick="manualSave()" style="margin:0;padding:8px 12px;font-size:0.55rem;">💾 Sauver</button>
+      </div>
+      <div class="settings-item">
+        <div>
+          <div class="settings-label">📋 Informations</div>
+          <div class="settings-desc">Version du jeu et infos</div>
+        </div>
+        <div style="font-size:0.5rem;color:#9ca3af;">v2.0</div>
+      </div>
+      ${player?.isAdmin ? `
+      <div style="font-size:0.7rem;color:#fbbf24;margin:20px 0 8px;">👑 ADMIN</div>
+      <div class="settings-item">
+        <div><div class="settings-label">🔄 Reset local</div><div class="settings-desc">Réinitialise les données locales</div></div>
+        <button class="danger" style="margin:0;padding:8px 12px;font-size:0.55rem;" onclick="adminReset()">Reset</button>
+      </div>
+      ` : ''}
+    </div>
+  `;
+  applySettings();
 }
 
 // SHOP
@@ -2579,6 +3092,15 @@ function renderShop() {
   document.getElementById('shopCoins').textContent = player.coins;
   const shopDiv = document.getElementById('shopItems');
   shopDiv.innerHTML = '';
+  
+  const amiDiscount = isAmiAdmin();
+  
+  if (amiDiscount) {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'grid-column:1/-1;background:linear-gradient(135deg,rgba(236,72,153,0.2),rgba(190,24,93,0.2));border:2px solid #ec4899;border-radius:12px;padding:12px;text-align:center;font-size:0.6rem;margin-bottom:10px;';
+    banner.innerHTML = '💗 <span style="color:#ec4899;">Ami(e) des Admins</span> — <span style="color:#10b981;">-10% sur tous les achats !</span>';
+    shopDiv.appendChild(banner);
+  }
 
   // Grouper par catégorie
   const categories = {};
@@ -2596,15 +3118,16 @@ function renderShop() {
     shopDiv.appendChild(title);
 
     items.forEach(item => {
+      const finalPrice = amiDiscount ? Math.floor(item.price * 0.9) : item.price;
       const div = document.createElement('div');
       div.className = 'shop-item';
       div.innerHTML = `
         <div class="shop-item-icon">${item.emoji}</div>
         <div class="shop-item-name">${item.name}</div>
         <div class="shop-item-desc">${item.desc}</div>
-        <div class="shop-item-price">💰 ${item.price}</div>
-        <button onclick="buyItem(${item.id})" ${player.coins < item.price ? 'disabled' : ''}>
-          ${player.coins < item.price ? '❌ Trop cher' : '✅ Acheter'}
+        <div class="shop-item-price">💰 ${amiDiscount ? `<span style="text-decoration:line-through;color:#6b7280;font-size:0.65rem;">${item.price}</span> <span style="color:#ec4899;">${finalPrice}</span>` : finalPrice}</div>
+        <button onclick="buyItem(${item.id})" ${player.coins < finalPrice ? 'disabled' : ''}>
+          ${player.coins < finalPrice ? '❌ Trop cher' : '✅ Acheter'}
         </button>
       `;
       shopDiv.appendChild(div);
@@ -2614,9 +3137,12 @@ function renderShop() {
 
 function buyItem(id) {
   const item = SHOP_ITEMS.find(i => i.id === id);
-  if (!item || player.coins < item.price) return;
+  if (!item) return;
   
-  player.coins -= item.price;
+  const finalPrice = isAmiAdmin() ? Math.floor(item.price * 0.9) : item.price;
+  if (player.coins < finalPrice) return;
+  
+  player.coins -= finalPrice;
   
   if      (id === 1)  { player.inventory.hints++; }
   else if (id === 2)  { player.inventory.skips++; }
@@ -2688,6 +3214,7 @@ function buyItem(id) {
   }
 
   savePlayer();
+  playBuySound();
   alert(`🎉 ${item.name} acheté !`);
   renderShop();
   updateHomeScreen();
@@ -2817,7 +3344,7 @@ let currentLbSort = 'maxLevel';
 
 // Mettre à jour le leaderboard public après chaque sauvegarde
 async function updateLeaderboardEntry() {
-  if (!firebaseReady || !currentUserId || currentUserId === 'admin' || currentUserId.startsWith('local_')) return;
+  if (!firebaseReady || !currentUserId || currentUserId.startsWith('local_') || (currentUserId && currentUserId.startsWith('admin_'))) return;
   try {
     await database.ref('leaderboard/' + currentUserId).set({
       username: player.username,
@@ -2826,7 +3353,9 @@ async function updateLeaderboardEntry() {
       coins: player.coins || 0,
       questionsAnswered: player.stats?.questionsAnswered || 0,
       bossesDefeated: player.stats?.bossesDefeated || 0,
-      avatarData: player.avatarData || null
+      avatarData: player.avatarData || null,
+      playTime: player.playTime || 0,
+      badges: player.badges || []
     });
   } catch(e) { /* silencieux */ }
 }
@@ -2856,12 +3385,14 @@ async function renderLeaderboard(sortBy) {
   }
 
   try {
-    const snap = await database.ref('leaderboard').once('value');
-    const data = snap.val();
-    if (!data) { loadEl.textContent = '🏜️ Aucun joueur encore inscrit au classement !'; return; }
-
-    let players = Object.values(data).filter(p => p.username);
-    players.sort((a, b) => (b[sortBy] || 0) - (a[sortBy] || 0));
+    // Charger admins et joueurs séparément
+    const [snapLb, snapAdmins] = await Promise.all([
+      database.ref('leaderboard').once('value'),
+      database.ref('players').orderByChild('isAdmin').equalTo(true).once('value').catch(() => ({ val: () => null }))
+    ]);
+    
+    const lbData = snapLb.val();
+    if (!lbData) { loadEl.textContent = '🏜️ Aucun joueur encore inscrit au classement !'; return; }
 
     loadEl.style.display = 'none';
 
@@ -2869,42 +3400,90 @@ async function renderLeaderboard(sortBy) {
     const icons   = { maxLevel: '🗺️', level: '⭐', coins: '💰' };
     const rankIcons = ['🥇','🥈','🥉'];
 
-    players.slice(0, 50).forEach((p, i) => {
-      const rank = i + 1;
+    // Séparer admins et joueurs
+    const adminPlayers = [];
+    const normalPlayers = [];
+    
+    Object.values(lbData).filter(p => p.username).forEach(p => {
+      if (p.isAdmin) adminPlayers.push(p);
+      else normalPlayers.push(p);
+    });
+    
+    // Ajouter admins depuis players Firebase
+    const adminSnap = snapAdmins.val ? snapAdmins.val() : null;
+    if (adminSnap) {
+      Object.values(adminSnap).forEach(a => {
+        if (a.isAdmin && !adminPlayers.find(p => p.username === a.username)) {
+          adminPlayers.push({ ...a, isAdmin: true });
+        }
+      });
+    }
+    
+    normalPlayers.sort((a, b) => (b[sortBy] || 0) - (a[sortBy] || 0));
+    adminPlayers.sort((a, b) => (b[sortBy] || 0) - (a[sortBy] || 0));
+
+    function formatPlayTime(ms) {
+      if (!ms) return '0min';
+      const h = Math.floor(ms / 3600000);
+      const m = Math.floor((ms % 3600000) / 60000);
+      return h > 0 ? `${h}h${m}min` : `${m}min`;
+    }
+    
+    function buildPlayerRow(p, rank, showRankIcon = true) {
       const isMe = player && p.username === player.username;
       const div = document.createElement('div');
       div.className = 'leaderboard-item' +
         (rank === 1 ? ' podium-1' : rank === 2 ? ' podium-2' : rank === 3 ? ' podium-3' : '') +
         (isMe ? ' me' : '');
-
-      // Créer le canvas avatar pour ce joueur
-      const avatarCanvasId = 'lbAvatar_' + i;
+      
+      const badgesHtml = (p.badges || []).map(b => `<span style="font-size:0.45rem;background:rgba(251,191,36,0.2);border:1px solid #fbbf24;border-radius:8px;padding:2px 6px;margin:2px;">${b}</span>`).join('');
+      const avatarCanvasId = 'lbAvatar_' + Math.random().toString(36).substr(2,6);
+      
       div.innerHTML = `
-        <div class="lb-rank">${rank <= 3 ? rankIcons[rank-1] : '#' + rank}</div>
+        <div class="lb-rank">${showRankIcon && rank <= 3 ? rankIcons[rank-1] : '#' + rank}</div>
         <canvas id="${avatarCanvasId}" class="mini-avatar-canvas lb-avatar" width="36" height="36" style="${p.avatarData ? '' : 'display:none;'}"></canvas>
         <div class="lb-info">
-          <div class="lb-name">${p.username}${isMe ? ' <span style="color:#10b981;">◀ toi</span>' : ''}</div>
-          <div class="lb-stats">Niv.${p.level||1} &nbsp;•&nbsp; ${p.questionsAnswered||0} questions &nbsp;•&nbsp; ${p.bossesDefeated||0} boss</div>
+          <div class="lb-name">${p.username}${isMe ? ' <span style="color:#10b981;">◀ toi</span>' : ''}${p.isAdmin ? ' <span style="font-size:0.4rem;background:#fbbf24;color:#000;padding:2px 5px;border-radius:5px;">ADMIN</span>' : ''}</div>
+          <div style="margin:3px 0;">${badgesHtml}</div>
+          <div class="lb-stats">Niv.${p.level||1} &nbsp;•&nbsp; ${p.questionsAnswered||0} Q &nbsp;•&nbsp; ${p.bossesDefeated||0} boss &nbsp;•&nbsp; ⏱️${formatPlayTime(p.playTime)}</div>
         </div>
         <div class="lb-score">${icons[sortBy]} ${(p[sortBy]||0).toLocaleString()}<br><span style="font-size:0.45rem;color:#9ca3af;">${labels[sortBy]}</span></div>
       `;
-      listEl.appendChild(div);
-
-      // Dessiner l'avatar sur le canvas une fois inséré dans le DOM
+      
       if (p.avatarData) {
-        const canvas = document.getElementById(avatarCanvasId);
-        if (canvas) drawMiniAvatar(canvas, p.avatarData, 36);
+        setTimeout(() => {
+          const canvas = document.getElementById(avatarCanvasId);
+          if (canvas) drawMiniAvatar(canvas, p.avatarData, 36);
+        }, 50);
       }
-    });
+      return div;
+    }
+
+    // Section Admins
+    if (adminPlayers.length > 0) {
+      const adminTitle = document.createElement('div');
+      adminTitle.className = 'lb-section-title admin-section';
+      adminTitle.innerHTML = '👑 ADMINS';
+      listEl.appendChild(adminTitle);
+      adminPlayers.forEach((p, i) => listEl.appendChild(buildPlayerRow(p, i+1, false)));
+    }
+    
+    // Section Joueurs
+    const playersTitle = document.createElement('div');
+    playersTitle.className = 'lb-section-title players-section';
+    playersTitle.innerHTML = `🎮 JOUEURS (${normalPlayers.length})`;
+    listEl.appendChild(playersTitle);
+    normalPlayers.slice(0, 50).forEach((p, i) => listEl.appendChild(buildPlayerRow(p, i+1)));
 
     if (player) {
-      const myIdx = players.findIndex(p => p.username === player.username);
+      const myIdx = normalPlayers.findIndex(p => p.username === player.username);
       rankEl.textContent = myIdx >= 0
-        ? `🎯 Ton classement : #${myIdx + 1} sur ${players.length} joueurs`
-        : `👤 ${players.length} joueurs au classement`;
+        ? `🎯 Ton classement : #${myIdx + 1} sur ${normalPlayers.length} joueurs`
+        : `👤 ${normalPlayers.length} joueurs au classement`;
     }
   } catch(e) {
-    loadEl.innerHTML = `❌ Erreur : ${e.message}<br><span style="font-size:0.55rem;color:#9ca3af;">Vérifie les règles Firebase (voir FIREBASE_SETUP.md)</span>`;
+    loadEl.innerHTML = `❌ Erreur : ${e.message}<br><span style="font-size:0.55rem;color:#9ca3af;">Vérifie les règles Firebase</span>`;
+    loadEl.style.display = 'block';
   }
 }
 
@@ -2957,13 +3536,17 @@ function updateHomeScreen() {
   document.getElementById('homePlayerBadges').innerHTML = badgesHTML;
 
   const firebaseStatus = document.getElementById('firebaseStatus');
-  if (firebaseReady && currentUserId && !currentUserId.startsWith('local_') && currentUserId !== 'admin') {
+  if (firebaseReady && currentUserId && !currentUserId.startsWith('local_')) {
     firebaseStatus.innerHTML = '<span style="color:#10b981;">🔥 Firebase actif — sauvegarde cloud toutes les secondes</span>';
     firebaseStatus.style.display = 'block';
   } else {
     firebaseStatus.innerHTML = '<span style="color:#f59e0b;">💾 Mode local — configure Firebase pour le cloud</span>';
     firebaseStatus.style.display = 'block';
   }
+  
+  // Afficher le bouton réglages
+  const gearBtn = document.getElementById('settingsGearBtn');
+  if (gearBtn) gearBtn.style.display = 'block';
 
   if (player.isAdmin) {
     document.getElementById('adminPanelHome').innerHTML = `
@@ -3240,7 +3823,7 @@ function getComboMultiplier() {
 function updateComboDisplay() {
   const el = document.getElementById('comboDisplay');
   if (!el) return;
-  if (comboCount < 2) { el.innerHTML = ''; return; }
+  if (!getSettings().comboDisplay || comboCount < 2) { el.innerHTML = ''; return; }
   const mult = getComboMultiplier();
   let cls = 'combo-badge';
   if (comboCount >= 10) cls += ' ultra';
@@ -3265,7 +3848,11 @@ function announceCombo() {
 // --- TIMER SYSTEM ---
 function startQuestionTimer() {
   clearInterval(questionTimer);
-  questionTimeLeft = 15;
+  const s = getSettings();
+  const maxTime = s.hardMode ? 8 : 15;
+  questionTimeLeft = maxTime;
+  document.getElementById('timerBar').style.display = s.timerEnabled ? 'block' : 'none';
+  document.getElementById('timerText').style.display = s.timerEnabled ? 'block' : 'none';
   updateTimerDisplay();
   questionTimer = setInterval(() => {
     questionTimeLeft--;
@@ -3297,6 +3884,7 @@ function getTimeBonus() {
 
 // --- 2. PARTICLES & SOUND ---
 function spawnParticles(x, y, type = 'correct') {
+  if (!getSettings().particlesEnabled) return;
   const container = document.getElementById('particles');
   if (!container) return;
   const emojis = type === 'correct' ? ['✨','⭐','💫','🌟','💥'] : ['💢','❌','💔'];
@@ -3313,6 +3901,7 @@ function spawnParticles(x, y, type = 'correct') {
 }
 
 function screenShake(intensity = 'light') {
+  if (!getSettings().screenShakeEnabled) return;
   const screens = document.querySelectorAll('.screen.active');
   screens.forEach(s => {
     s.classList.add('shake');
@@ -3321,6 +3910,7 @@ function screenShake(intensity = 'light') {
 }
 
 function playComboSound(combo) {
+  if (!getSettings().soundEnabled) return;
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = ctx.createOscillator();
@@ -3338,6 +3928,7 @@ function playComboSound(combo) {
 }
 
 function playCorrectSound() {
+  if (!getSettings().soundEnabled) return;
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     [523, 659, 784].forEach((freq, i) => {
@@ -3356,6 +3947,7 @@ function playCorrectSound() {
 }
 
 function playWrongSound() {
+  if (!getSettings().soundEnabled) return;
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = ctx.createOscillator();
@@ -3369,6 +3961,79 @@ function playWrongSound() {
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.3);
+  } catch(e) {}
+}
+
+function playLevelUpSound() {
+  if (!getSettings().soundEnabled) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const freqs = [523, 659, 784, 1047];
+    freqs.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.12);
+      gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + i * 0.12 + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.35);
+      osc.start(ctx.currentTime + i * 0.12);
+      osc.stop(ctx.currentTime + i * 0.12 + 0.4);
+    });
+  } catch(e) {}
+}
+
+function playBuySound() {
+  if (!getSettings().soundEnabled) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [800, 1000].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.15, ctx.currentTime + i * 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.2);
+      osc.start(ctx.currentTime + i * 0.1);
+      osc.stop(ctx.currentTime + i * 0.1 + 0.25);
+    });
+  } catch(e) {}
+}
+
+function playBossSound() {
+  if (!getSettings().soundEnabled) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(100, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.5);
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.5);
+  } catch(e) {}
+}
+
+function playClickSound() {
+  if (!getSettings().soundEnabled) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 1200;
+    gain.gain.setValueAtTime(0.05, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.05);
   } catch(e) {}
 }
 
@@ -3913,7 +4578,7 @@ let mpCurrentTab = 'rooms';
 
 // ── Présence en ligne ──────────────────────────────────────────
 function startPresence() {
-  if (!firebaseReady || !currentUserId || currentUserId === 'admin' || currentUserId.startsWith('local_')) return;
+  if (!firebaseReady || !currentUserId || currentUserId.startsWith('admin_') || currentUserId === 'admin' || currentUserId.startsWith('local_')) return;
   const ref = database.ref('presence/' + currentUserId);
   ref.set({ username: player.username, level: player.level || 1, maxLevel: player.maxLevel || 1, online: true, ts: Date.now() });
   ref.onDisconnect().remove();
@@ -3925,14 +4590,14 @@ function startPresence() {
 
 function stopPresence() {
   if (presenceInterval) clearInterval(presenceInterval);
-  if (!firebaseReady || !currentUserId || currentUserId === 'admin' || currentUserId.startsWith('local_')) return;
+  if (!firebaseReady || !currentUserId || currentUserId.startsWith('admin_') || currentUserId === 'admin' || currentUserId.startsWith('local_')) return;
   database.ref('presence/' + currentUserId).remove();
   if (challengeListener) { database.ref('challenges/' + currentUserId).off(); challengeListener = null; }
 }
 
 // ── Challenges entrants ────────────────────────────────────────
 function listenForChallenges() {
-  if (!firebaseReady || !currentUserId || currentUserId.startsWith('local_') || currentUserId === 'admin') return;
+  if (!firebaseReady || !currentUserId || currentUserId.startsWith('local_') || currentUserId.startsWith('admin_') || currentUserId === 'admin') return;
   const ref = database.ref('challenges/' + currentUserId);
   challengeListener = ref.on('child_added', snap => {
     const challenge = snap.val();
@@ -3961,7 +4626,7 @@ function showChallengeNotif(challenge, challengeId) {
 
 // ── Initialisation écran multi ─────────────────────────────────
 function initMultiplayer() {
-  if (!firebaseReady || !currentUserId || currentUserId.startsWith('local_') || currentUserId === 'admin') {
+  if (!firebaseReady || !currentUserId || currentUserId.startsWith('local_') || currentUserId.startsWith('admin_') || currentUserId === 'admin') {
     document.getElementById('mpFirebaseWarning').style.display = 'block';
     document.getElementById('mpRoomsList').innerHTML = '';
     document.getElementById('mpOnlineList').innerHTML = '';
@@ -4604,7 +5269,7 @@ logout = function() {
 const _origShowScreen = showScreen;
 showScreen = function(screenId) {
   _origShowScreen(screenId);
-  if (screenId === 'homeScreen' && player && firebaseReady && currentUserId && !currentUserId.startsWith('local_') && currentUserId !== 'admin') {
+  if (screenId === 'homeScreen' && player && firebaseReady && currentUserId && !currentUserId.startsWith('local_') && !currentUserId.startsWith('admin_') && currentUserId !== 'admin') {
     // Refresh presence on home
     database.ref('presence/' + currentUserId).update({ ts: Date.now(), username: player.username, level: player.level || 1, maxLevel: player.maxLevel || 1, online: true }).catch(()=>{});
   }
@@ -4614,10 +5279,19 @@ showScreen = function(screenId) {
 const _origUpdateHS = updateHomeScreen;
 updateHomeScreen = function() {
   _origUpdateHS();
-  if (player && !player._presenceStarted && firebaseReady && currentUserId && !currentUserId.startsWith('local_') && currentUserId !== 'admin') {
+  if (player && !player._presenceStarted && firebaseReady && currentUserId && !currentUserId.startsWith('local_') && !currentUserId.startsWith('admin_') && currentUserId !== 'admin') {
     player._presenceStarted = true;
     startPresence();
   }
+  // Démarrer le tracking du temps de jeu
+  if (player && !player._ptStarted) {
+    player._ptStarted = true;
+    startPlayTimeTracking();
+  }
+  // Vérifier badges spéciaux
+  if (player && !player.isAdmin) checkSpecialBadges();
+  // Appliquer les réglages
+  applySettings();
 };
 
 // ========================================
@@ -4672,7 +5346,16 @@ document.addEventListener('visibilitychange', () => { if (document.hidden && pla
 window.addEventListener('load', () => {
   initFirebase();
   scheduleRandomEvent();
+  applySettings();
+  
+  // Son de clic sur les boutons
+  document.addEventListener('click', (e) => {
+    if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+      playClickSound();
+    }
+  });
 });
 </script>
+<div style="text-align:center;padding:20px 0 10px;font-family:'Press Start 2P',cursive;font-size:0.45rem;color:rgba(255,255,255,0.25);letter-spacing:2px;">v1.3.0</div>
 </body>
 </html>
