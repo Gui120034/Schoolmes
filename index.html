@@ -1900,8 +1900,8 @@ async function login() {
   const username = document.getElementById('loginUsername').value.trim();
   const code = document.getElementById('loginCode').value.trim();
   
-  if (!username || !code || code.length < 4) {
-    alert('⚠️ Pseudo et code requis (min 4 caractères) !');
+  if (!username || !code || code.length < 6) {
+    alert('⚠️ Pseudo et code requis (min 6 caractères) !');
     return;
   }
 
@@ -1925,15 +1925,20 @@ async function login() {
       try {
         // Authentification Firebase pour que les règles de sécurité acceptent les écritures (leaderboard, players)
         const adminEmail = `admin_${matchedAdmin.username}@schoolmes.game`;
+        let adminCred = null;
         try {
-          await auth.signInWithEmailAndPassword(adminEmail, code);
+          adminCred = await auth.signInWithEmailAndPassword(adminEmail, code);
         } catch(authErr) {
           if (authErr.code === 'auth/user-not-found' || authErr.code === 'auth/invalid-credential' || authErr.code === 'auth/invalid-email') {
-            await auth.createUserWithEmailAndPassword(adminEmail, code);
+            adminCred = await auth.createUserWithEmailAndPassword(adminEmail, code);
           } else {
             // Fallback anonyme si le compte existe déjà avec un autre mot de passe
-            try { await auth.signInAnonymously(); } catch(_) {}
+            try { adminCred = await auth.signInAnonymously(); } catch(_) {}
           }
+        }
+        // Utiliser le vrai UID Firebase (indispensable pour les règles de sécurité)
+        if (adminCred && adminCred.user) {
+          currentUserId = adminCred.user.uid;
         }
         const snap = await database.ref('players/' + currentUserId).once('value');
         if (snap.exists()) {
@@ -1959,6 +1964,7 @@ async function login() {
       } catch(e) { console.warn('Admin Firebase sync:', e.message); }
     }
     startAutoSave();
+    startEventListener(); // Écouter les événements Firebase en temps réel
     showScreen('homeScreen');
     updateHomeScreen();
     return;
@@ -2037,6 +2043,7 @@ async function login() {
 
     await loadPlayerFromFirebase(currentUserId);
     startAutoSave();
+    startEventListener(); // Écouter les événements Firebase en temps réel
     checkSpecialBadges();
     resetBtn();
     showScreen('homeScreen');
@@ -2739,15 +2746,15 @@ function submitAnswer() {
     // Time bonus
     xpGain += timeBonus * 10;
     
-    // Boost XP ×2
-    if (player.inventory.xpBoost > 0) {
+    // Boost XP ×3 (priorité sur ×2)
+    const _wasXpBoosted = player.inventory.xpBoost3 > 0 || player.inventory.xpBoost > 0;
+    if (player.inventory.xpBoost3 > 0) {
+      xpGain *= 3;
+      player.inventory.xpBoost3--;
+    } else if (player.inventory.xpBoost > 0) {
+      // Boost XP ×2
       xpGain *= 2;
       player.inventory.xpBoost--;
-    }
-    // Boost XP ×3 (priorité sur ×2 si les deux sont actifs)
-    if (player.inventory.xpBoost3 > 0) {
-      xpGain = (isBoss ? 250 : 50) * 3;
-      player.inventory.xpBoost3--;
     }
     
     // Event multiplier
@@ -2764,6 +2771,7 @@ function submitAnswer() {
     if (player.talents && player.talents.includes('t7')) coinGain = Math.floor(coinGain * 1.25);
     
     // Bonus Pièces ×2
+    const _wasCoinBoosted = (player.inventory.coinBoost || 0) > 0;
     if ((player.inventory.coinBoost || 0) > 0) {
       coinGain *= 2;
       player.inventory.coinBoost--;
@@ -2814,8 +2822,8 @@ function submitAnswer() {
     
     const comboTxt = comboMult > 1 ? ` 🔥×${comboMult}` : '';
     const timeTxt = timeBonus > 0 ? ` ⏱️+${timeBonus*10}XP` : '';
-    const boostMsg = player.inventory.xpBoost > 0 || player.inventory.xpBoost3 > 0 ? ' ⚡ BOOST !' : '';
-    const coinMsg = (player.inventory.coinBoost || 0) > 0 ? ' 💸 BONUS !' : '';
+    const boostMsg = _wasXpBoosted ? ' ⚡ BOOST !' : '';
+    const coinMsg = _wasCoinBoosted ? ' 💸 BONUS !' : '';
     document.getElementById('quizFeedback').innerHTML = `
       <div style="color:#10b981; font-size:1.2rem;">✅ CORRECT !${comboTxt}</div>
       <div style="color:#fbbf24;">+${xpGain} XP${boostMsg}${timeTxt} | +${coinGain} 💰${coinMsg}</div>
@@ -3918,7 +3926,8 @@ function updateHomeScreen() {
           <button class="gold" onclick="adminGiveAll()">🌍 Donner à TOUS</button>
           <button class="danger" onclick="openAdminBan()">🔨 Bannir / Débannir</button>
           <button class="danger" onclick="adminReset()">🔄 Reset local</button>
-          <button style="background:linear-gradient(135deg,#7c3aed,#6d28d9);" onclick="triggerRandomEvent()">⚡ Déclencher Événement</button>
+          <button style="background:linear-gradient(135deg,#7c3aed,#6d28d9);" onclick="openAdminEventPanel()">⚡ Déclencher Événement</button>
+          <button style="background:linear-gradient(135deg,#ef4444,#b91c1c);" onclick="stopAdminEvent()">🛑 Stopper Événement</button>
           <button style="background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#000;" onclick="openPrestigeModal()">⭐ Test Prestige</button>
         </div>
       </div>
@@ -5317,28 +5326,67 @@ const EVENTS = [
 let activeEvent = null;
 let eventEndTime = null;
 
+// ── Événements Firebase partagés ────────────────────────────────
+// L'admin écrit dans database.ref('activeEvent'), tous les clients écoutent en temps réel.
+
 function triggerRandomEvent() {
-  if (activeEvent) return;
   const event = EVENTS[Math.floor(Math.random() * EVENTS.length)];
-  activeEvent = event;
-  eventEndTime = Date.now() + event.duration;
-  // Update banner if visible (only on homeScreen)
-  const banner = document.getElementById('eventBanner');
-  if (banner) {
-    banner.style.display = 'block';
-    banner.innerHTML = `🚨 ÉVÉNEMENT: ${event.name}<br><span style="font-size:0.5rem;">${event.desc} — <span id="eventTimer"></span></span>`;
+  const endTime = Date.now() + event.duration;
+
+  if (firebaseReady && database) {
+    // Écrire l'événement dans Firebase → tous les joueurs le reçoivent instantanément
+    database.ref('activeEvent').set({
+      id: event.id,
+      name: event.name,
+      desc: event.desc,
+      color: event.color,
+      endTime: endTime,
+      startedBy: player ? player.username : 'Admin'
+    }).then(() => {
+      alert('✅ Événement lancé pour TOUS les joueurs : ' + event.name);
+    }).catch(e => {
+      alert('❌ Erreur Firebase : ' + e.message);
+    });
+  } else {
+    // Fallback local si pas de Firebase
+    activeEvent = event;
+    eventEndTime = endTime;
+    _applyEventBanner();
+    updateEventTimer();
   }
-  updateEventTimer();
 }
 
-function refreshEventBanner() {
-  if (!activeEvent || Date.now() > eventEndTime) return;
+function startEventListener() {
+  if (!firebaseReady || !database) return;
+  database.ref('activeEvent').on('value', snap => {
+    const data = snap.val();
+    if (data && data.endTime > Date.now()) {
+      activeEvent = EVENTS.find(e => e.id === data.id) || data;
+      eventEndTime = data.endTime;
+      _applyEventBanner();
+      updateEventTimer();
+    } else {
+      activeEvent = null;
+      eventEndTime = null;
+      const banner = document.getElementById('eventBanner');
+      if (banner) banner.style.display = 'none';
+    }
+  });
+}
+
+function _applyEventBanner() {
+  if (!activeEvent) return;
   const banner = document.getElementById('eventBanner');
   if (banner) {
     banner.style.display = 'block';
     banner.innerHTML = `🚨 ÉVÉNEMENT: ${activeEvent.name}<br><span style="font-size:0.5rem;">${activeEvent.desc} — <span id="eventTimer"></span></span>`;
-    updateEventTimer();
   }
+}
+
+function refreshEventBanner() {
+  if (!activeEvent || Date.now() > eventEndTime) return;
+  _applyEventBanner();
+  updateEventTimer();
 }
 
 function updateEventTimer() {
@@ -5348,6 +5396,10 @@ function updateEventTimer() {
     activeEvent = null;
     const banner = document.getElementById('eventBanner');
     if (banner) banner.style.display = 'none';
+    // Supprimer l'événement de Firebase si on est admin
+    if (firebaseReady && database && player && player.isAdmin) {
+      database.ref('activeEvent').remove().catch(()=>{});
+    }
     return;
   }
   const mins = Math.floor(remaining / 60000);
@@ -5370,11 +5422,65 @@ function showEventDetails() {
   alert(`🚨 ÉVÉNEMENT ACTIF: ${activeEvent.name}\n${activeEvent.desc}`);
 }
 
-// Trigger random event every 20-40 minutes
+function openAdminEventPanel() {
+  if (!player || !player.isAdmin) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'adminEventOverlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:20000;display:flex;align-items:center;justify-content:center;padding:20px;';
+  const eventOptions = EVENTS.map((e, i) => `
+    <button style="margin:8px;padding:14px 20px;background:linear-gradient(135deg,#7c3aed,#6d28d9);border:2px solid #fbbf24;border-radius:12px;font-family:'Press Start 2P';font-size:0.6rem;color:white;cursor:pointer;"
+      onclick="triggerSpecificEvent(${i}); document.getElementById('adminEventOverlay').remove();">
+      ${e.name}<br><span style="font-size:0.45rem;color:#9ca3af;">${e.desc}</span>
+    </button>
+  `).join('');
+  overlay.innerHTML = `
+    <div style="background:#1a0a2e;border:3px solid #7c3aed;border-radius:20px;padding:25px;max-width:500px;width:100%;text-align:center;">
+      <h3 style="color:#fbbf24;font-size:0.85rem;margin-bottom:20px;">⚡ CHOISIR UN ÉVÉNEMENT</h3>
+      <div>${eventOptions}</div>
+      <button class="danger" style="margin-top:15px;" onclick="document.getElementById('adminEventOverlay').remove()">✖ Annuler</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function triggerSpecificEvent(index) {
+  if (!player || !player.isAdmin) return;
+  const event = EVENTS[index];
+  if (!event) return;
+  const endTime = Date.now() + event.duration;
+  if (firebaseReady && database) {
+    database.ref('activeEvent').set({
+      id: event.id, name: event.name, desc: event.desc, color: event.color,
+      endTime: endTime, startedBy: player.username
+    }).then(() => {
+      alert('✅ Événement lancé pour TOUS : ' + event.name);
+    }).catch(e => alert('❌ Erreur Firebase : ' + e.message));
+  } else {
+    activeEvent = event;
+    eventEndTime = endTime;
+    _applyEventBanner();
+    updateEventTimer();
+  }
+}
+
+function stopAdminEvent() {
+  if (!player || !player.isAdmin) return;
+  if (!confirm('🛑 Arrêter l\'événement en cours ?')) return;
+  if (firebaseReady && database) {
+    database.ref('activeEvent').remove().catch(e => alert('❌ Erreur : ' + e.message));
+  } else {
+    activeEvent = null;
+    eventEndTime = null;
+    const banner = document.getElementById('eventBanner');
+    if (banner) banner.style.display = 'none';
+  }
+}
+
+// Trigger random event every 20-40 minutes (local auto-schedule, admins only)
 function scheduleRandomEvent() {
   const delay = (20 + Math.random() * 20) * 60 * 1000;
   setTimeout(() => {
-    if (player) triggerRandomEvent();
+    if (player && player.isAdmin) triggerRandomEvent();
     scheduleRandomEvent();
   }, delay);
 }
@@ -5468,7 +5574,7 @@ let mpCurrentTab = 'rooms';
 
 // ── Présence en ligne ──────────────────────────────────────────
 function startPresence() {
-  if (!firebaseReady || !currentUserId || currentUserId.startsWith('admin_') || currentUserId === 'admin' || currentUserId.startsWith('local_')) return;
+  if (!firebaseReady || !currentUserId || currentUserId.startsWith('local_')) return;
   const ref = database.ref('presence/' + currentUserId);
   ref.set({ username: player.username, level: player.level || 1, maxLevel: player.maxLevel || 1, online: true, ts: Date.now() });
   ref.onDisconnect().remove();
@@ -5480,14 +5586,14 @@ function startPresence() {
 
 function stopPresence() {
   if (presenceInterval) clearInterval(presenceInterval);
-  if (!firebaseReady || !currentUserId || currentUserId.startsWith('admin_') || currentUserId === 'admin' || currentUserId.startsWith('local_')) return;
+  if (!firebaseReady || !currentUserId || currentUserId.startsWith('local_')) return;
   database.ref('presence/' + currentUserId).remove();
   if (challengeListener) { database.ref('challenges/' + currentUserId).off(); challengeListener = null; }
 }
 
 // ── Challenges entrants ────────────────────────────────────────
 function listenForChallenges() {
-  if (!firebaseReady || !currentUserId || currentUserId.startsWith('local_') || currentUserId.startsWith('admin_') || currentUserId === 'admin') return;
+  if (!firebaseReady || !currentUserId || currentUserId.startsWith('local_')) return;
   const ref = database.ref('challenges/' + currentUserId);
   challengeListener = ref.on('child_added', snap => {
     const challenge = snap.val();
@@ -5516,7 +5622,7 @@ function showChallengeNotif(challenge, challengeId) {
 
 // ── Initialisation écran multi ─────────────────────────────────
 function initMultiplayer() {
-  if (!firebaseReady || !currentUserId || currentUserId.startsWith('local_') || currentUserId.startsWith('admin_') || currentUserId === 'admin') {
+  if (!firebaseReady || !currentUserId || currentUserId.startsWith('local_')) {
     document.getElementById('mpFirebaseWarning').style.display = 'block';
     document.getElementById('mpRoomsList').innerHTML = '';
     document.getElementById('mpOnlineList').innerHTML = '';
@@ -6159,7 +6265,7 @@ logout = function() {
 const _origShowScreen = showScreen;
 showScreen = function(screenId) {
   _origShowScreen(screenId);
-  if (screenId === 'homeScreen' && player && firebaseReady && currentUserId && !currentUserId.startsWith('local_') && !currentUserId.startsWith('admin_') && currentUserId !== 'admin') {
+  if (screenId === 'homeScreen' && player && firebaseReady && currentUserId && !currentUserId.startsWith('local_')) {
     // Refresh presence on home
     database.ref('presence/' + currentUserId).update({ ts: Date.now(), username: player.username, level: player.level || 1, maxLevel: player.maxLevel || 1, online: true }).catch(()=>{});
   }
@@ -6169,7 +6275,7 @@ showScreen = function(screenId) {
 const _origUpdateHS = updateHomeScreen;
 updateHomeScreen = function() {
   _origUpdateHS();
-  if (player && !player._presenceStarted && firebaseReady && currentUserId && !currentUserId.startsWith('local_') && !currentUserId.startsWith('admin_') && currentUserId !== 'admin') {
+  if (player && !player._presenceStarted && firebaseReady && currentUserId && !currentUserId.startsWith('local_')) {
     player._presenceStarted = true;
     startPresence();
   }
@@ -6704,7 +6810,7 @@ function submitBrevetAnswer() {
   var q = brevetState.questions[brevetState.currentIndex];
   var input = document.getElementById('brevetDirectInput').value.trim().toLowerCase();
   var correct = q.choices[q.answer].toLowerCase();
-  var isCorrect = input === correct || correct.includes(input) && input.length > 3;
+  var isCorrect = input === correct || (correct.includes(input) && input.length > 3);
   brevetState.answered = true;
   if (isCorrect) { brevetState.correct++; } else { brevetState.wrong++; }
   document.getElementById('brevetCorrectCount').textContent = brevetState.correct;
