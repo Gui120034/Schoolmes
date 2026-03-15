@@ -1202,12 +1202,125 @@ body.theme-neon .stat-value { color: #00ff41 !important; }
   pointer-events: none;
 }
 #autosaveIndicator.show { opacity: 1; }
+
+/* ===== MESSAGERIE ADMIN ===== */
+#adminMsgScreen {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #0a0a1e;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 99998;
+  padding: 30px;
+  text-align: center;
+  overflow-y: auto;
+}
+#adminMsgScreen.show { display: flex; }
+#adminMsgScreen .msg-crown {
+  font-size: 3rem;
+  margin-bottom: 10px;
+  animation: eventPulse 1.5s infinite;
+}
+#adminMsgScreen h1 {
+  color: #fbbf24;
+  font-size: 1.2rem;
+  margin-bottom: 8px;
+  animation: eventPulse 1.5s infinite;
+  font-family: 'Press Start 2P', cursive;
+}
+#adminMsgScreen .msg-subtitle {
+  font-size: 0.5rem;
+  color: #9ca3af;
+  margin-bottom: 25px;
+  font-family: 'Press Start 2P', cursive;
+}
+#adminMsgScreen .msg-card {
+  background: rgba(251,191,36,0.08);
+  border: 2px solid #fbbf24;
+  border-radius: 16px;
+  padding: 25px 30px;
+  max-width: 560px;
+  width: 100%;
+  margin: 0 auto 25px;
+  text-align: left;
+}
+#adminMsgScreen .msg-subject {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 0.75rem;
+  color: #fbbf24;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(251,191,36,0.3);
+}
+#adminMsgScreen .msg-body {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 0.6rem;
+  color: #e2e8f0;
+  line-height: 2;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-bottom: 16px;
+}
+#adminMsgScreen .msg-meta {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 0.45rem;
+  color: #9ca3af;
+}
+#adminMsgScreen .msg-read-btn {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border: none; border-radius: 12px;
+  color: #fff; font-family: 'Press Start 2P', cursive;
+  font-size: 0.65rem; padding: 14px 30px;
+  cursor: pointer; margin-top: 5px;
+  transition: all 0.3s;
+  box-shadow: 0 0 20px rgba(16,185,129,0.4);
+}
+#adminMsgScreen .msg-read-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 25px rgba(16,185,129,0.6);
+}
+#adminMsgDot {
+  position: fixed; top: 58px; left: 16px; z-index: 17000;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #fbbf24; border: 2px solid #000;
+  box-shadow: 0 0 10px #fbbf24;
+  animation: dotPulse 1.5s infinite;
+  display: none; cursor: pointer;
+}
+#adminMsgDot.show { display: block; }
+.admin-msg-inbox-item {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px; margin: 8px 0;
+  background: rgba(0,0,0,0.5); border-radius: 12px;
+  border: 2px solid rgba(251,191,36,0.3); font-size: 0.55rem;
+  transition: border-color 0.2s;
+}
+.admin-msg-inbox-item.unread { border-color: #fbbf24; background: rgba(251,191,36,0.08); }
+.admin-msg-inbox-item.read { opacity: 0.6; }
 </style>
 </head>
 <body>
 
 <!-- AUTO-SAVE INDICATOR -->
 <div id="autosaveIndicator">⚙️...</div>
+
+<!-- POINT DE NOTIFICATION MESSAGE ADMIN -->
+<div id="adminMsgDot" title="Messages non lus" onclick="openAdminMsgInbox()">📨</div>
+
+<!-- ÉCRAN PLEIN ÉCRAN MESSAGE ADMIN (comme le ban) -->
+<div id="adminMsgScreen">
+  <div class="msg-crown">📨</div>
+  <h1>MESSAGE ADMIN</h1>
+  <div class="msg-subtitle" id="adminMsgScreenFrom"></div>
+  <div class="msg-card">
+    <div class="msg-subject" id="adminMsgScreenSubject"></div>
+    <div class="msg-body" id="adminMsgScreenBody"></div>
+    <div class="msg-meta" id="adminMsgScreenMeta"></div>
+  </div>
+  <button class="msg-read-btn" onclick="markCurrentMsgRead()">✅ J'ai lu ce message</button>
+</div>
 
 <!-- INDICATEUR MUSICAL -->
 <div id="musicIndicator">
@@ -1967,6 +2080,8 @@ async function login() {
     startEventListener(); // Écouter les événements Firebase en temps réel
     showScreen('homeScreen');
     updateHomeScreen();
+    startMsgListener();
+    updateMsgDot();
     return;
   }
 
@@ -2020,6 +2135,8 @@ async function login() {
           alert('🎉 Compte créé avec succès !');
           showScreen('homeScreen');
           updateHomeScreen();
+          startMsgListener();
+          updateMsgDot();
         } catch (createErr) {
           resetBtn();
           alert('❌ Erreur création : ' + createErr.message);
@@ -2048,6 +2165,8 @@ async function login() {
     resetBtn();
     showScreen('homeScreen');
     updateHomeScreen();
+    startMsgListener();
+    updateMsgDot();
 
   } catch (error) {
     console.error('Erreur login inattendue:', error);
@@ -2089,6 +2208,9 @@ function loginLocal(username, code) {
   }
   startAutoSave();
   startPlayTimeTracking();
+  // Démarrer l'écoute des messages admin
+  startMsgListener();
+  updateMsgDot();
 }
 
 async function logout() {
@@ -3335,7 +3457,7 @@ function renderSettings() {
           <div class="settings-label">📋 Informations</div>
           <div class="settings-desc">Version du jeu et infos</div>
         </div>
-        <div style="font-size:0.5rem;color:#9ca3af;">v1.3.0</div>
+        <div style="font-size:0.5rem;color:#9ca3af;">v1.3.8</div>
       </div>
       ${player?.isAdmin ? `
       <div style="font-size:0.7rem;color:#fbbf24;margin:20px 0 8px;">👑 ADMIN</div>
@@ -3682,6 +3804,23 @@ function randomAvatar() {
                                  || root.child('players/admin_darius/isAdmin').val()  === true
                                  || root.child('players/admin_guigous/isAdmin').val() === true)",
       ".write": "auth != null"
+    },
+
+    "adminMessages": {
+      "global": {
+        ".read":  "auth != null",
+        ".write": "auth != null && (root.child('players/admin_titi/isAdmin').val()    === true
+                                   || root.child('players/admin_darius/isAdmin').val()  === true
+                                   || root.child('players/admin_guigous/isAdmin').val() === true)"
+      },
+      "private": {
+        "$uid": {
+          ".read":  "auth != null && $uid === auth.uid",
+          ".write": "auth != null && (root.child('players/admin_titi/isAdmin').val()    === true
+                                     || root.child('players/admin_darius/isAdmin').val()  === true
+                                     || root.child('players/admin_guigous/isAdmin').val() === true)"
+        }
+      }
     }
 
   }
@@ -3929,6 +4068,7 @@ function updateHomeScreen() {
           <button style="background:linear-gradient(135deg,#7c3aed,#6d28d9);" onclick="openAdminEventPanel()">⚡ Déclencher Événement</button>
           <button style="background:linear-gradient(135deg,#ef4444,#b91c1c);" onclick="stopAdminEvent()">🛑 Stopper Événement</button>
           <button style="background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#000;" onclick="openPrestigeModal()">⭐ Test Prestige</button>
+          <button style="background:linear-gradient(135deg,#0ea5e9,#0284c7);" onclick="openAdminMsgPanel()">📨 Envoyer un message</button>
         </div>
       </div>
     `;
@@ -4156,6 +4296,310 @@ function adminReset() {
     alert('✅ Local réinitialisé !');
     location.reload();
   }
+}
+
+// ========================================
+// 📨 SYSTÈME DE MESSAGERIE ADMIN
+// ========================================
+
+let _currentBannerMsgId = null;
+let _msgListener = null;
+
+// ----- ADMIN : ouvrir le panneau d'envoi -----
+async function openAdminMsgPanel() {
+  if (!player?.isAdmin || !firebaseReady) {
+    alert('❌ Firebase requis pour cette action.');
+    return;
+  }
+
+  // Charger la liste des joueurs depuis /leaderboard
+  const snap = await database.ref('leaderboard').once('value');
+  const data = snap.val() || {};
+  const entries = Object.entries(data).filter(([, p]) => p.username && !p.isAdmin);
+
+  const overlay = document.createElement('div');
+  overlay.id = 'adminMsgOverlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.92);z-index:20000;overflow-y:auto;padding:20px;';
+  overlay.innerHTML = `
+    <div style="max-width:680px;margin:0 auto;background:#1a1a2e;border:3px solid #0ea5e9;border-radius:20px;padding:25px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h2 style="color:#0ea5e9;font-size:0.85rem;">📨 ENVOYER UN MESSAGE</h2>
+        <button class="danger" style="margin:0;" onclick="document.getElementById('adminMsgOverlay').remove()">✖</button>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div>
+          <div style="font-size:0.6rem;color:#9ca3af;margin-bottom:6px;">🎯 Destinataire</div>
+          <select id="amsg_target" style="width:100%;background:#000;color:#fff;border:2px solid #0ea5e9;border-radius:8px;padding:10px;font-family:'Press Start 2P';font-size:0.6rem;">
+            <option value="all">🌍 Tous les joueurs</option>
+            ${entries.map(([uid, p]) => `<option value="${uid}">${p.username} (Niv.${p.level||1})</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <div style="font-size:0.6rem;color:#9ca3af;margin-bottom:6px;">📝 Objet (optionnel)</div>
+          <input id="amsg_subject" type="text" placeholder="ex: Événement spécial !" style="width:100%;background:#000;color:#fff;border:2px solid #0ea5e9;border-radius:8px;padding:10px;font-family:'Press Start 2P';font-size:0.55rem;">
+        </div>
+        <div>
+          <div style="font-size:0.6rem;color:#9ca3af;margin-bottom:6px;">💬 Message</div>
+          <textarea id="amsg_body" rows="5" placeholder="Écris ton message ici..." style="width:100%;background:#000;color:#fff;border:2px solid #0ea5e9;border-radius:8px;padding:10px;font-family:'Press Start 2P';font-size:0.55rem;resize:vertical;line-height:1.7;"></textarea>
+        </div>
+        <button style="background:linear-gradient(135deg,#0ea5e9,#0284c7);border:none;border-radius:10px;color:#fff;padding:14px;font-family:'Press Start 2P';font-size:0.65rem;cursor:pointer;" onclick="sendAdminMsg()">📨 ENVOYER</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+// ----- ADMIN : envoyer le message -----
+async function sendAdminMsg() {
+  const target = document.getElementById('amsg_target').value;
+  const subject = document.getElementById('amsg_subject').value.trim() || 'Message de l\'équipe Admin';
+  const body = document.getElementById('amsg_body').value.trim();
+
+  if (!body) { alert('⚠️ Le message est vide !'); return; }
+
+  const msgData = {
+    subject,
+    body,
+    from: player.username,
+    ts: Date.now(),
+    target // 'all' ou uid
+  };
+
+  try {
+    if (target === 'all') {
+      // Message global lisible par tous → /adminMessages/global/
+      await database.ref('adminMessages/global').push(msgData);
+      alert(`✅ Message envoyé à tous les joueurs !`);
+    } else {
+      // Message privé → /adminMessages/private/{uid}/
+      await database.ref('adminMessages/private/' + target).push(msgData);
+      // Récupérer le nom du joueur pour l'alerte
+      const snap = await database.ref('leaderboard/' + target).once('value');
+      const name = snap.val()?.username || target;
+      alert(`✅ Message envoyé à ${name} !`);
+    }
+    document.getElementById('adminMsgOverlay')?.remove();
+  } catch(e) {
+    alert('❌ Erreur : ' + e.message);
+  }
+}
+
+// ----- JOUEUR : écouter les messages en temps réel -----
+function startMsgListener() {
+  if (!firebaseReady || !currentUserId || currentUserId.startsWith('local_')) {
+    console.log('[MSG] startMsgListener: conditions non remplies', {firebaseReady, currentUserId});
+    return;
+  }
+  if (player?.isAdmin) return;
+
+  console.log('[MSG] Démarrage listener messages pour:', currentUserId);
+
+  // 1. Afficher immédiatement les messages non lus existants
+  _checkOldUnreadMessages();
+
+  // 2. Écouter les nouveaux messages en temps réel
+  database.ref('adminMessages/global').on('child_added', (snap) => {
+    const msg = snap.val();
+    console.log('[MSG] Nouveau message global reçu:', snap.key, msg);
+    if (!msg) return;
+    showMsgIfUnread('global_' + snap.key, msg);
+  }, (err) => {
+    console.error('[MSG] Erreur lecture adminMessages/global:', err.message);
+  });
+
+  database.ref('adminMessages/private/' + currentUserId).on('child_added', (snap) => {
+    const msg = snap.val();
+    console.log('[MSG] Nouveau message privé reçu:', snap.key, msg);
+    if (!msg) return;
+    showMsgIfUnread('private_' + snap.key, msg);
+  }, (err) => {
+    console.error('[MSG] Erreur lecture adminMessages/private:', err.message);
+  });
+}
+
+async function _checkOldUnreadMessages() {
+  try {
+    const [gSnap, pSnap] = await Promise.all([
+      database.ref('adminMessages/global').once('value'),
+      database.ref('adminMessages/private/' + currentUserId).once('value')
+    ]);
+    const readKey = 'schoolmesReadMsg_' + currentUserId;
+    let read = [];
+    try { read = JSON.parse(localStorage.getItem(readKey) || '[]'); } catch(e) {}
+
+    const gData = gSnap.val() || {};
+    const pData = pSnap.val() || {};
+
+    // Trouver le premier message non lu (le plus récent)
+    const allMsgs = [];
+    Object.entries(gData).forEach(([k, v]) => allMsgs.push({ id: 'global_' + k, ...v }));
+    Object.entries(pData).forEach(([k, v]) => allMsgs.push({ id: 'private_' + k, ...v }));
+    allMsgs.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+
+    const firstUnread = allMsgs.find(m => !read.includes(m.id));
+    if (firstUnread) {
+      showMsgIfUnread(firstUnread.id, firstUnread);
+    }
+  } catch(e) { /* silencieux */ }
+}
+
+function showMsgIfUnread(msgId, msg) {
+  const readKey = 'schoolmesReadMsg_' + currentUserId;
+  let read = [];
+  try { read = JSON.parse(localStorage.getItem(readKey) || '[]'); } catch(e) {}
+  if (read.includes(msgId)) return;
+
+  _currentBannerMsgId = msgId;
+
+  const screen   = document.getElementById('adminMsgScreen');
+  const fromEl   = document.getElementById('adminMsgScreenFrom');
+  const subjEl   = document.getElementById('adminMsgScreenSubject');
+  const bodyEl   = document.getElementById('adminMsgScreenBody');
+  const metaEl   = document.getElementById('adminMsgScreenMeta');
+
+  if (!screen) return;
+
+  const d = new Date(msg.ts);
+  const dateStr = d.toLocaleDateString('fr-FR') + ' à ' + d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+
+  fromEl.textContent  = '👑 De : ' + (msg.from || 'Équipe Admin');
+  subjEl.textContent  = msg.subject || 'Message de l\'équipe Admin';
+  bodyEl.textContent  = msg.body || '';
+  metaEl.textContent  = dateStr + (msg.target === 'all' ? '  •  🌍 Message global' : '  •  📩 Message privé');
+
+  screen.classList.add('show');
+  document.getElementById('adminMsgDot').classList.add('show');
+}
+
+function closeAdminMsgBanner() {
+  document.getElementById('adminMsgScreen').classList.remove('show');
+}
+
+function markCurrentMsgRead() {
+  if (!_currentBannerMsgId) return;
+  const readKey = 'schoolmesReadMsg_' + currentUserId;
+  let read = [];
+  try { read = JSON.parse(localStorage.getItem(readKey) || '[]'); } catch(e) {}
+  if (!read.includes(_currentBannerMsgId)) read.push(_currentBannerMsgId);
+  localStorage.setItem(readKey, JSON.stringify(read));
+  document.getElementById('adminMsgScreen').classList.remove('show');
+  updateMsgDot();
+  _currentBannerMsgId = null;
+}
+
+async function updateMsgDot() {
+  if (!firebaseReady || !currentUserId || currentUserId.startsWith('local_') || player?.isAdmin) return;
+  const readKey = 'schoolmesReadMsg_' + currentUserId;
+  let read = [];
+  try { read = JSON.parse(localStorage.getItem(readKey) || '[]'); } catch(e) {}
+
+  let unread = 0;
+  try {
+    const [gSnap, pSnap] = await Promise.all([
+      database.ref('adminMessages/global').once('value'),
+      database.ref('adminMessages/private/' + currentUserId).once('value')
+    ]);
+    const gData = gSnap.val() || {};
+    const pData = pSnap.val() || {};
+    Object.keys(gData).forEach(k => { if (!read.includes('global_' + k)) unread++; });
+    Object.keys(pData).forEach(k => { if (!read.includes('private_' + k)) unread++; });
+  } catch(e) {}
+
+  const dot = document.getElementById('adminMsgDot');
+  if (dot) {
+    if (unread > 0) dot.classList.add('show');
+    else dot.classList.remove('show');
+  }
+}
+
+// ----- Boîte de réception joueur -----
+async function openAdminMsgInbox() {
+  if (!firebaseReady || !currentUserId) return;
+  const readKey = 'schoolmesReadMsg_' + currentUserId;
+  let read = [];
+  try { read = JSON.parse(localStorage.getItem(readKey) || '[]'); } catch(e) {}
+
+  const overlay = document.createElement('div');
+  overlay.id = 'adminInboxOverlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.92);z-index:20000;overflow-y:auto;padding:20px;';
+  overlay.innerHTML = `
+    <div style="max-width:680px;margin:0 auto;background:#1a1a2e;border:3px solid #fbbf24;border-radius:20px;padding:25px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h2 style="color:#fbbf24;font-size:0.85rem;">📬 MES MESSAGES ADMIN</h2>
+        <button class="danger" style="margin:0;" onclick="document.getElementById('adminInboxOverlay').remove()">✖</button>
+      </div>
+      <div id="inboxMsgList"><div style="text-align:center;color:#9ca3af;font-size:0.6rem;padding:30px;">⏳ Chargement...</div></div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  try {
+    const [gSnap, pSnap] = await Promise.all([
+      database.ref('adminMessages/global').once('value'),
+      database.ref('adminMessages/private/' + currentUserId).once('value')
+    ]);
+
+    const msgs = [];
+    const gData = gSnap.val() || {};
+    const pData = pSnap.val() || {};
+    Object.entries(gData).forEach(([k, v]) => msgs.push({ id: 'global_' + k, ...v, type: '🌍 Global' }));
+    Object.entries(pData).forEach(([k, v]) => msgs.push({ id: 'private_' + k, ...v, type: '📩 Privé' }));
+    msgs.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+
+    const listEl = document.getElementById('inboxMsgList');
+    if (!msgs.length) {
+      listEl.innerHTML = '<div style="text-align:center;color:#9ca3af;font-size:0.6rem;padding:40px;">📭 Aucun message pour l\'instant</div>';
+      return;
+    }
+
+    listEl.innerHTML = msgs.map(msg => {
+      const isRead = read.includes(msg.id);
+      const d = new Date(msg.ts);
+      const dateStr = d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
+      return `
+        <div class="admin-msg-inbox-item ${isRead ? 'read' : 'unread'}" id="inboxItem_${msg.id}">
+          <div style="flex:1;">
+            <div style="font-size:0.5rem;color:#0ea5e9;margin-bottom:4px;">${msg.type} &nbsp;•&nbsp; 👑 ${escapeHtml(msg.from)} &nbsp;•&nbsp; ${dateStr}</div>
+            <div style="font-size:0.6rem;color:#fbbf24;margin-bottom:6px;">${escapeHtml(msg.subject)}</div>
+            <div style="font-size:0.55rem;color:#e2e8f0;line-height:1.6;">${escapeHtml(msg.body)}</div>
+          </div>
+          ${!isRead ? `<button onclick="markMsgReadById('${msg.id}')" style="background:linear-gradient(135deg,#10b981,#059669);border:none;border-radius:8px;color:#fff;font-family:'Press Start 2P';font-size:0.45rem;padding:8px;cursor:pointer;white-space:nowrap;flex-shrink:0;">✅ Lu</button>` : '<span style="font-size:0.5rem;color:#10b981;">✔ Lu</span>'}
+        </div>
+      `;
+    }).join('');
+  } catch(e) {
+    const listEl = document.getElementById('inboxMsgList');
+    if (listEl) listEl.innerHTML = `<div style="color:#ef4444;font-size:0.6rem;text-align:center;padding:20px;">Erreur : ${e.message}</div>`;
+  }
+}
+
+function markMsgReadById(msgId) {
+  const readKey = 'schoolmesReadMsg_' + currentUserId;
+  let read = [];
+  try { read = JSON.parse(localStorage.getItem(readKey) || '[]'); } catch(e) {}
+  if (!read.includes(msgId)) read.push(msgId);
+  localStorage.setItem(readKey, JSON.stringify(read));
+
+  // Mettre à jour visuellement
+  const item = document.getElementById('inboxItem_' + msgId);
+  if (item) {
+    item.classList.remove('unread');
+    item.classList.add('read');
+    const btn = item.querySelector('button');
+    if (btn) btn.replaceWith(Object.assign(document.createElement('span'), {
+      style: 'font-size:0.5rem;color:#10b981;', textContent: '✔ Lu'
+    }));
+  }
+  updateMsgDot();
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
 }
 
 // ========================================
