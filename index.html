@@ -3358,7 +3358,7 @@ async function login() {
   const code = document.getElementById('loginCode').value.trim();
   
   if (!username || !code || code.length < 6) {
-    alert('⚠️ Pseudo et code requis (min 6 caractères) !');
+    showToast('⚠️ Pseudo et code requis (min 6 caractères) !', 'error', 3000);
     return;
   }
 
@@ -3477,7 +3477,7 @@ async function login() {
           startAutoSave();
           checkSpecialBadges();
           resetBtn();
-          alert('🎉 Compte créé avec succès !');
+          showToast('🎉 Compte créé avec succès !', 'success', 3000);
           showScreen('homeScreen');
           updateHomeScreen();
           startMsgListener();
@@ -3486,13 +3486,13 @@ async function login() {
           setTimeout(() => showTutorial(), 600);
         } catch (createErr) {
           resetBtn();
-          alert('❌ Erreur création : ' + createErr.message);
+          showToast('❌ Erreur création : ' + createErr.message, 'error', 4000);
         }
         return;
       }
       // Autre erreur Firebase (réseau, etc.)
       resetBtn();
-      alert('❌ Erreur connexion : ' + signInErr.message);
+      showToast('❌ Erreur connexion : ' + signInErr.message, 'error', 4000);
       return;
     }
 
@@ -3517,7 +3517,7 @@ async function login() {
 
   } catch (error) {
     console.error('Erreur login inattendue:', error);
-    alert('❌ Erreur inattendue : ' + error.message);
+    showToast('❌ Erreur inattendue : ' + error.message, 'error', 4000);
     resetBtn();
   }
 }
@@ -3535,7 +3535,7 @@ function loginLocal(username, code) {
       showScreen('homeScreen');
       updateHomeScreen();
     } else {
-      alert('❌ Code incorrect !');
+      showToast('❌ Code incorrect !', 'error', 3000);
     }
   } else {
     player = {
@@ -3549,7 +3549,7 @@ function loginLocal(username, code) {
     localStorage.setItem('schoolmesAccounts', JSON.stringify(accounts));
     currentUserId = 'local_' + key;
     checkSpecialBadges();
-    alert('🎉 Compte créé (mode local) !');
+    showToast('🎉 Compte créé (mode local) !', 'success', 3000);
     showScreen('homeScreen');
     updateHomeScreen();
     // Lancer le tutoriel pour les nouveaux joueurs
@@ -3635,7 +3635,7 @@ function showBanScreen(ban) {
 
 async function openAdminBan() {
   if (!player?.isAdmin || !firebaseReady) {
-    alert('❌ Firebase requis.'); return;
+    showToast('❌ Firebase requis.', 'error', 3000); return;
   }
   // Charger la liste des joueurs + bans actuels
   const [snapLb, snapBans] = await Promise.all([
@@ -3716,8 +3716,8 @@ async function executeBan() {
   const lbSnap = await database.ref('leaderboard/' + uid).once('value');
   const targetData = lbSnap.val() || {};
 
-  if (!uid) { alert('⚠️ Sélectionne un joueur.'); return; }
-  if (!reason) { alert('⚠️ Entre une raison pour le ban.'); return; }
+  if (!uid) { showToast('⚠️ Sélectionne un joueur.', 'error', 3000); return; }
+  if (!reason) { showToast('⚠️ Entre une raison pour le ban.', 'error', 3000); return; }
   const _confirmMsg = '🔨 Bannir ' + (targetData.username || uid) + '?\nRaison : ' + reason + (duration > 0 ? '\nDurée : ' + duration + ' jour(s)' : '\nDurée : Permanent');
   if (!confirm(_confirmMsg)) return;
 
@@ -3733,10 +3733,10 @@ async function executeBan() {
     await database.ref('bans/' + uid).set(banData);
     // Mettre à jour le leaderboard avec le flag banni
     await database.ref('leaderboard/' + uid).update({ isBanned: true });
-    alert(`✅ ${banData.username} a été banni !`);
+    showToast(`✅ ${banData.username} a été banni !`, 'success', 3000);
     document.getElementById('adminBanOverlay').remove();
   } catch(e) {
-    alert('❌ Erreur : ' + e.message);
+    showToast('❌ Erreur : ' + e.message, 'error', 4000);
   }
 }
 
@@ -3744,15 +3744,15 @@ async function executeUnban() {
   const uid = document.getElementById('ban_target').value;
   const lbSnap = await database.ref('leaderboard/' + uid).once('value');
   const targetData = lbSnap.val() || {};
-  if (!uid) { alert('⚠️ Sélectionne un joueur.'); return; }
+  if (!uid) { showToast('⚠️ Sélectionne un joueur.', 'error', 3000); return; }
   if (!confirm(`✅ Débannir ${targetData.username || uid} ?`)) return;
   try {
     await database.ref('bans/' + uid).remove();
     await database.ref('leaderboard/' + uid).update({ isBanned: false });
-    alert(`✅ ${targetData.username || uid} a été débanni !`);
+    showToast(`✅ ${targetData.username || uid} a été débanni !`, 'success', 3000);
     document.getElementById('adminBanOverlay').remove();
   } catch(e) {
-    alert('❌ Erreur : ' + e.message);
+    showToast('❌ Erreur : ' + e.message, 'error', 4000);
   }
 }
 
@@ -3763,7 +3763,7 @@ async function quickUnban(uid, btn) {
     await database.ref('leaderboard/' + uid).update({ isBanned: false });
     btn.closest('.admin-ban-card').remove();
   } catch(e) {
-    alert('❌ Erreur : ' + e.message);
+    showToast('❌ Erreur : ' + e.message, 'error', 4000);
   }
 }
 
@@ -3772,14 +3772,14 @@ async function quickUnban(uid, btn) {
 // ========================================
 
 async function executeDeleteAccount() {
-  if (!player?.isAdmin || !firebaseReady) { alert('❌ Firebase requis.'); return; }
+  if (!player?.isAdmin || !firebaseReady) { showToast('❌ Firebase requis.', 'error', 3000); return; }
   const uid = document.getElementById('ban_target').value;
   const lbSnap = await database.ref('leaderboard/' + uid).once('value');
   const targetData = lbSnap.val() || {};
   const targetName = targetData.username || uid;
 
-  if (!uid) { alert('⚠️ Sélectionne un joueur.'); return; }
-  if (targetData.isAdmin) { alert('❌ Impossible de supprimer un compte admin !'); return; }
+  if (!uid) { showToast('⚠️ Sélectionne un joueur.', 'error', 3000); return; }
+  if (targetData.isAdmin) { showToast('❌ Impossible de supprimer un compte admin !', 'error', 3000); return; }
 
   const confirm1 = confirm('⚠️ SUPPRIMER DÉFINITIVEMENT le compte de ' + targetName + ' ?\nCette action est IRRÉVERSIBLE !');
   if (!confirm1) return;
@@ -3795,10 +3795,10 @@ async function executeDeleteAccount() {
       database.ref('presence/' + uid).remove(),
       database.ref('anticheat/' + uid).remove(),
     ]);
-    alert('✅ Le compte de ' + targetName + ' a été supprimé définitivement.');
+    showToast('✅ Le compte de ' + targetName + ' a été supprimé définitivement.', 'success', 4000);
     document.getElementById('adminBanOverlay').remove();
   } catch(e) {
-    alert('❌ Erreur lors de la suppression : ' + e.message);
+    showToast('❌ Erreur lors de la suppression : ' + e.message, 'error', 4000);
   }
 }
 
@@ -4094,7 +4094,7 @@ function useHint() {
   const revealed = answer.charAt(Math.floor(Math.random() * answer.length));
   player.inventory.hints--;
   savePlayer();
-  alert(`💡 Indice : La réponse contient la lettre "${revealed.toUpperCase()}"`);
+  showToast(`💡 Indice : La réponse contient la lettre "${revealed.toUpperCase()}"`, 'gold', 4000);
   renderBonusBar();
 }
 
@@ -4142,14 +4142,14 @@ function useShield() {
     player._shieldActive = true;
     savePlayer();
     renderBonusBar();
-    alert('🛡️ Bouclier activé ! Ta prochaine erreur sera bloquée.');
+    showToast('🛡️ Bouclier activé ! Ta prochaine erreur sera bloquée.', 'success', 3000);
   }
 }
 
 function useAimer() {
   if ((player.inventory.aimers || 0) <= 0) return;
   if (!currentQuestion || currentQuestion.type !== 'qcm') {
-    alert('🎯 Le Viseur ne fonctionne que sur les QCM !'); return;
+    showToast('🎯 Le Viseur ne fonctionne que sur les QCM !', 'error', 3000); return;
   }
   // Éliminer 2 mauvaises réponses
   const wrongBtns = Array.from(document.querySelectorAll('.choice-btn'))
@@ -4168,7 +4168,7 @@ function useFreeze() {
     player._freezeActive = true;
     savePlayer();
     renderBonusBar();
-    alert('⏳ Gel activé ! Ta prochaine erreur sera ignorée.');
+    showToast('⏳ Gel activé ! Ta prochaine erreur sera ignorée.', 'success', 3000);
   }
 }
 
@@ -4181,7 +4181,7 @@ function useSecondChance() {
     savePlayer();
     updateHeartsDisplay();
     renderBonusBar();
-    alert('✅ Une erreur a été effacée !');
+    showToast('✅ Une erreur a été effacée !', 'success', 2500);
   }
 }
 
@@ -4195,14 +4195,14 @@ function submitAnswer() {
   if (currentQuestion.type === 'qcm') {
     userAnswer = selectedChoiceValue;
     if (!userAnswer) {
-      alert('⚠️ Sélectionne une réponse !');
-      return; // answerLocked reste false : on n'a pas encore verrouillé
+      showToast('⚠️ Sélectionne une réponse !', 'error', 2000);
+      return;
     }
   } else {
     userAnswer = document.getElementById('answerInput').value.trim();
     if (!userAnswer) {
-      alert('⚠️ Entre une réponse !');
-      return; // idem
+      showToast('⚠️ Entre une réponse !', 'error', 2000);
+      return;
     }
   }
 
@@ -4483,7 +4483,7 @@ function skipQuestion() {
       document.getElementById('shopCoins') && (document.getElementById('shopCoins').textContent = player.coins);
     }
   } else {
-    alert('❌ Pas assez de pièces !');
+    showToast('❌ Pas assez de pièces !', 'error', 2500);
   }
 }
 
@@ -4627,8 +4627,8 @@ function switchOpTab(tab) {
 async function renderOnlinePlayers() {
   const el = document.getElementById('onlinePlayersList');
   if (!el) return;
-  if (!firebaseReady) {
-    el.innerHTML = '<div style="color:#9ca3af;font-size:0.6rem;text-align:center;padding:30px;">⚠️ Firebase requis pour voir les joueurs</div>';
+  if (!firebaseReady || !currentUserId || currentUserId.startsWith('local_')) {
+    el.innerHTML = '<div style="color:#9ca3af;font-size:0.6rem;text-align:center;padding:30px;">⚠️ Connecte-toi avec un compte Firebase pour voir les joueurs en ligne</div>';
     return;
   }
   el.innerHTML = '<div style="text-align:center;color:#9ca3af;font-size:0.6rem;padding:30px;">⏳ Chargement...</div>';
@@ -4987,7 +4987,7 @@ function buyItem(id) {
     const gain = gains[Math.floor(Math.random() * gains.length)];
     player.coins += gain;
     savePlayer(); renderShop(); updateHomeScreen();
-    alert(`🎲 Loterie ! Tu as gagné ${gain} pièces !`); return;
+    showToast(`🎲 Loterie ! Tu as gagné ${gain} pièces !`, 'gold', 4000); return;
   }
   else if (id === 25) {
     // Coffre mystère
@@ -5001,7 +5001,7 @@ function buyItem(id) {
     const prize = prizes[Math.floor(Math.random() * prizes.length)];
     const msg = prize();
     savePlayer(); renderShop(); updateHomeScreen();
-    alert(`📦 Coffre ouvert ! Tu as gagné : ${msg}`); return;
+    showToast(`📦 Coffre ouvert ! Tu as gagné : ${msg}`, 'gold', 4000); return;
   }
   else if (id === 26) {
     // Mega coffre
@@ -5015,7 +5015,7 @@ function buyItem(id) {
     const prize = megaPrizes[Math.floor(Math.random() * megaPrizes.length)];
     const msg = prize();
     savePlayer(); renderShop(); updateHomeScreen();
-    alert(`🎁 Mega Coffre ouvert ! Gain : ${msg}`); return;
+    showToast(`🎁 Mega Coffre ouvert ! Gain : ${msg}`, 'gold', 4000); return;
   }
   else if (id === 27) {
     sessionErrors = 0;
@@ -5051,7 +5051,7 @@ function buyItem(id) {
 
   savePlayer();
   playBuySound();
-  alert(`🎉 ${item.name} acheté !`);
+  showToast(`🎉 ${item.name} acheté !`, 'success', 2500);
   renderShop();
   updateHomeScreen();
 }
@@ -5147,7 +5147,7 @@ function renderColorPalette() {
 function saveAvatar() {
   player.avatarData = [...pixelData];
   savePlayer();
-  alert('💾 Avatar sauvegardé !');
+  showToast('💾 Avatar sauvegardé !', 'success', 2000);
 }
 
 function clearAvatar() {
@@ -5252,6 +5252,13 @@ function randomAvatar() {
                                      || root.child('players/admin_guigous/isAdmin').val() === true)"
         }
       }
+    },
+
+    "activeEvent": {
+      ".read":  true,
+      ".write": "auth != null && (root.child('players/admin_titi/isAdmin').val()    === true
+                                 || root.child('players/admin_darius/isAdmin').val()  === true
+                                 || root.child('players/admin_guigous/isAdmin').val() === true)"
     }
 
   }
@@ -5676,7 +5683,7 @@ function updateHomeScreen() {
 
 async function openAdminGive() {
   if (!player?.isAdmin || !firebaseReady) {
-    alert('❌ Firebase requis pour cette action.');
+    showToast('❌ Firebase requis pour cette action.', 'error', 3000);
     return;
   }
 
@@ -5686,7 +5693,7 @@ async function openAdminGive() {
   const entries = Object.entries(data).filter(([, p]) => p.username);
 
   if (entries.length === 0) {
-    alert('Aucun joueur trouvé dans le classement.');
+    showToast('Aucun joueur trouvé dans le classement.', 'error', 3000);
     return;
   }
 
@@ -5746,13 +5753,13 @@ async function adminGiveOne() {
   const uid = document.getElementById('ag_target').value;
   const type = document.getElementById('ag_type').value;
   const amount = document.getElementById('ag_amount').value.trim();
-  if (!uid || !amount) { alert('⚠️ Remplis tous les champs !'); return; }
+  if (!uid || !amount) { showToast('⚠️ Remplis tous les champs !', 'error', 3000); return; }
 
   try {
     // Modifier les données du joueur dans /players
     const snap = await database.ref('players/' + uid).once('value');
     const target = snap.val();
-    if (!target) { alert('❌ Joueur introuvable dans la DB.'); return; }
+    if (!target) { showToast('❌ Joueur introuvable dans la DB.', 'error', 3000); return; }
 
     if (!target.inventory) target.inventory = { hints:0, skips:0, secondChances:0, xpBoost:0 };
     if (!target.badges) target.badges = [];
@@ -5772,16 +5779,16 @@ async function adminGiveOne() {
       coins: target.coins || 0
     });
 
-    alert(`✅ ${amount} ${type} donné à ${target.username} !`);
+    showToast(`✅ ${amount} ${type} donné à ${target.username} !`, 'success', 3000);
     document.getElementById('adminOverlay')?.remove();
   } catch(e) {
-    alert('❌ Erreur : ' + e.message);
+    showToast('❌ Erreur : ' + e.message, 'error', 4000);
   }
 }
 
 async function adminGiveAll() {
   if (!player?.isAdmin || !firebaseReady) {
-    alert('❌ Firebase requis pour cette action.');
+    showToast('❌ Firebase requis pour cette action.', 'error', 3000);
     return;
   }
 
@@ -5824,45 +5831,54 @@ async function adminGiveAll() {
 async function confirmGiveAll() {
   const type = document.getElementById('aga_type').value;
   const amount = document.getElementById('aga_amount').value.trim();
-  if (!amount) { alert('⚠️ Remplis le montant !'); return; }
+  if (!amount) { showToast('⚠️ Remplis le montant !', 'error', 3000); return; }
   if (!confirm(`⚠️ Donner "${amount}" (${type}) à TOUS les joueurs Firebase ?`)) return;
 
   document.getElementById('adminGiveAllOverlay').remove();
 
   try {
-    const snap = await database.ref('players').once('value');
-    const data = snap.val() || {};
-    const updates = {};
+    // On lit depuis /leaderboard (public) pour avoir la liste des joueurs
+    // puis on met à jour /players/$uid individuellement (auth admin requis)
+    const snapLb = await database.ref('leaderboard').once('value');
+    const lbData = snapLb.val() || {};
     let count = 0;
+    const errors = [];
 
-    for (const [uid, p] of Object.entries(data)) {
-      const updated = JSON.parse(JSON.stringify(p)); // deep copy
-      if (!updated.inventory) updated.inventory = { hints:0, skips:0, secondChances:0, xpBoost:0 };
-      if (!updated.badges) updated.badges = [];
+    for (const [uid, lbEntry] of Object.entries(lbData)) {
+      if (!lbEntry || !lbEntry.username) continue;
+      try {
+        // Lire les données complètes du joueur
+        const snapP = await database.ref('players/' + uid).once('value');
+        const p = snapP.val();
+        if (!p) continue;
+        const updated = JSON.parse(JSON.stringify(p));
+        if (!updated.inventory) updated.inventory = { hints:0, skips:0, secondChances:0, xpBoost:0 };
+        if (!updated.badges) updated.badges = [];
 
-      if (type === 'coins') updated.coins = (updated.coins||0) + parseInt(amount);
-      else if (type === 'xp') updated.xp = (updated.xp||0) + parseInt(amount);
-      else if (type === 'badge') { if (!updated.badges.includes(amount)) updated.badges.push(amount); }
-      else updated.inventory[type] = (updated.inventory[type]||0) + parseInt(amount);
+        if (type === 'coins') updated.coins = (updated.coins||0) + parseInt(amount);
+        else if (type === 'xp') updated.xp = (updated.xp||0) + parseInt(amount);
+        else if (type === 'badge') { if (!updated.badges.includes(amount)) updated.badges.push(amount); }
+        else updated.inventory[type] = (updated.inventory[type]||0) + parseInt(amount);
 
-      updates['players/' + uid] = updated;
-
-      // Mettre à jour le leaderboard public
-      updates['leaderboard/' + uid] = {
-        username: updated.username,
-        level: updated.level || 1,
-        maxLevel: updated.maxLevel || 1,
-        coins: updated.coins || 0,
-        questionsAnswered: updated.stats?.questionsAnswered || 0,
-        bossesDefeated: updated.stats?.bossesDefeated || 0
-      };
-      count++;
+        await database.ref('players/' + uid).set(updated);
+        // Mettre à jour le leaderboard
+        await database.ref('leaderboard/' + uid).update({
+          coins: updated.coins || 0,
+          badges: updated.badges || []
+        });
+        count++;
+      } catch(innerErr) {
+        errors.push(uid);
+      }
     }
 
-    await database.ref().update(updates);
-    alert(`✅ Don "${amount}" (${type}) envoyé à ${count} joueurs !`);
+    if (errors.length > 0) {
+      showToast(`✅ Don envoyé à ${count} joueurs (${errors.length} erreurs)`, 'gold', 4000);
+    } else {
+      showToast(`✅ Don "${amount}" (${type}) envoyé à ${count} joueurs !`, 'success', 4000);
+    }
   } catch(e) {
-    alert('❌ Erreur : ' + e.message);
+    showToast('❌ Erreur : ' + e.message, 'error', 4000);
   }
 }
 
@@ -5870,8 +5886,8 @@ function adminReset() {
   if (!player?.isAdmin) return;
   if (confirm('⚠️ Réinitialiser les données locales ?')) {
     localStorage.removeItem('schoolmesAccounts');
-    alert('✅ Local réinitialisé !');
-    location.reload();
+    showToast('✅ Local réinitialisé !', 'success', 2000);
+    setTimeout(() => location.reload(), 1500);
   }
 }
 
@@ -5885,7 +5901,7 @@ let _msgListener = null;
 // ----- ADMIN : ouvrir le panneau d'envoi -----
 async function openAdminMsgPanel() {
   if (!player?.isAdmin || !firebaseReady) {
-    alert('❌ Firebase requis pour cette action.');
+    showToast('❌ Firebase requis pour cette action.', 'error', 3000);
     return;
   }
 
@@ -5971,30 +5987,30 @@ async function sendAdminMsg() {
   const typeRadio = document.querySelector('input[name="amsg_type"]:checked');
   const msgType = typeRadio ? typeRadio.value : 'normal'; // 'normal' ou 'update'
 
-  if (!body) { alert('⚠️ Le message est vide !'); return; }
+  if (!body) { showToast('⚠️ Le message est vide !', 'error', 3000); return; }
 
   const msgData = {
     subject,
     body,
     from: player.username,
     ts: Date.now(),
-    target, // 'all' ou uid
-    msgType  // 'normal' ou 'update'
+    target,
+    msgType
   };
 
   try {
     if (target === 'all') {
       await database.ref('adminMessages/global').push(msgData);
-      alert(`✅ Message envoyé à tous les joueurs !`);
+      showToast(`✅ Message envoyé à tous les joueurs !`, 'success', 3000);
     } else {
       await database.ref('adminMessages/private/' + target).push(msgData);
       const snap = await database.ref('leaderboard/' + target).once('value');
       const name = snap.val()?.username || target;
-      alert(`✅ Message envoyé à ${name} !`);
+      showToast(`✅ Message envoyé à ${name} !`, 'success', 3000);
     }
     document.getElementById('adminMsgOverlay')?.remove();
   } catch(e) {
-    alert('❌ Erreur : ' + e.message);
+    showToast('❌ Erreur : ' + e.message, 'error', 4000);
   }
 }
 
@@ -7105,7 +7121,7 @@ function tryStartGame() {
   if (player && player.isAdmin) { showScreen('gameScreen'); initGame(); return; }
   const energy = getEnergy();
   if (energy <= 0) {
-    alert('⚡ Plus d\'énergie ! Elle se recharge automatiquement toutes les 30 minutes.\n\nOu achetez des recharges dans la boutique !');
+    showToast('⚡ Plus d\'énergie ! Elle se recharge toutes les 30 min.\nOu achetez des recharges en boutique !', 'error', 4000);
     return;
   }
   useEnergy();
@@ -7366,9 +7382,9 @@ function openTalentTree() {
 function unlockTalent(id) {
   if (!player || !player.talents) player.talents = [];
   if (player.talents.includes(id)) return;
-  if ((player.talentPoints || 0) < 1) { alert('Pas assez de points de talent !'); return; }
+  if ((player.talentPoints || 0) < 1) { showToast('❌ Pas assez de points de talent !', 'error', 3000); return; }
   const talent = TALENTS.find(t => t.id === id);
-  if (talent.requires && !player.talents.includes(talent.requires)) { alert('Débloque le talent précédent d\'abord !'); return; }
+  if (talent.requires && !player.talents.includes(talent.requires)) { showToast('⚠️ Débloque le talent précédent d\'abord !', 'error', 3000); return; }
   player.talents.push(id);
   player.talentPoints = (player.talentPoints || 0) - 1;
   savePlayer();
@@ -7417,9 +7433,9 @@ function triggerRandomEvent() {
       endTime: endTime,
       startedBy: player ? player.username : 'Admin'
     }).then(() => {
-      alert('✅ Événement lancé pour TOUS les joueurs : ' + event.name);
+      showToast('✅ Événement lancé pour TOUS : ' + event.name, 'success', 3000);
     }).catch(e => {
-      alert('❌ Erreur Firebase : ' + e.message);
+      showToast('❌ Erreur Firebase : ' + e.message, 'error', 4000);
     });
   } else {
     // Fallback local si pas de Firebase
@@ -7493,7 +7509,7 @@ function getEventMultiplier(type) {
 
 function showEventDetails() {
   if (!activeEvent) return;
-  alert(`🚨 ÉVÉNEMENT ACTIF: ${activeEvent.name}\n${activeEvent.desc}`);
+  showToast(`🚨 ${activeEvent.name} — ${activeEvent.desc}`, 'gold', 5000);
 }
 
 function openAdminEventPanel() {
@@ -7527,8 +7543,8 @@ function triggerSpecificEvent(index) {
       id: event.id, name: event.name, desc: event.desc, color: event.color,
       endTime: endTime, startedBy: player.username
     }).then(() => {
-      alert('✅ Événement lancé pour TOUS : ' + event.name);
-    }).catch(e => alert('❌ Erreur Firebase : ' + e.message));
+      showToast('✅ Événement lancé : ' + event.name, 'success', 3000);
+    }).catch(e => showToast('❌ Erreur Firebase : ' + e.message, 'error', 4000));
   } else {
     activeEvent = event;
     eventEndTime = endTime;
@@ -7541,7 +7557,7 @@ function stopAdminEvent() {
   if (!player || !player.isAdmin) return;
   if (!confirm('🛑 Arrêter l\'événement en cours ?')) return;
   if (firebaseReady && database) {
-    database.ref('activeEvent').remove().catch(e => alert('❌ Erreur : ' + e.message));
+    database.ref('activeEvent').remove().catch(e => showToast('❌ Erreur : ' + e.message, 'error', 4000));
   } else {
     activeEvent = null;
     eventEndTime = null;
@@ -7565,7 +7581,7 @@ function canPrestige() {
 }
 
 function openPrestigeModal() {
-  if (!canPrestige()) { alert('Atteins le niveau 10 000 pour prestige !'); return; }
+  if (!canPrestige()) { showToast('⚠️ Atteins le niveau 10 000 pour le prestige !', 'error', 3000); return; }
   const overlay = document.createElement('div');
   overlay.id = 'prestigeModal';
   overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:20000;display:flex;align-items:center;justify-content:center;';
@@ -7608,7 +7624,7 @@ function doPrestige(btn) {
   document.querySelector('div[style*="z-index:20000"]')?.remove();
   showScreen('homeScreen');
   updateHomeScreen();
-  alert(`🌟 PRESTIGE ${prestigeLevel} ACTIVÉ ! Tu as gardé ${keptCoins} pièces et reçu 5 points de talent bonus !`);
+  showToast(`🌟 PRESTIGE ${prestigeLevel} ACTIVÉ ! ${keptCoins} pièces conservées + 5 talents bonus !`, 'gold', 5000);
 }
 
 // ========================================
@@ -7754,7 +7770,7 @@ async function refreshRooms() {
 
 async function createRoom() {
   if (!firebaseReady || !player) return;
-  if (currentRoomId) { alert('Tu es déjà dans un salon !'); return; }
+  if (currentRoomId) { showToast('⚠️ Tu es déjà dans un salon !', 'error', 3000); return; }
 
   const questions = generateDuelQuestions();
   const roomId = database.ref('rooms').push().key;
@@ -7782,12 +7798,11 @@ async function joinRoom(roomId) {
 
   const snap = await database.ref('rooms/' + roomId).once('value');
   const room = snap.val();
-  if (!room || room.status !== 'waiting') { alert('Ce salon n\'est plus disponible !'); refreshRooms(); return; }
+  if (!room || room.status !== 'waiting') { showToast('⚠️ Ce salon n\'est plus disponible !', 'error', 3000); refreshRooms(); return; }
   
-  // Vérifier si le salon est plein
   const playerCount = Object.keys(room.players || {}).length;
   if (playerCount >= MAX_ROOM_PLAYERS && room.hostUid !== currentUserId) {
-    alert('Ce salon est plein !'); refreshRooms(); return;
+    showToast('⚠️ Ce salon est plein !', 'error', 3000); refreshRooms(); return;
   }
   
   if (room.hostUid === currentUserId) { openRoomLobby(roomId, room.questions); return; }
@@ -7920,7 +7935,7 @@ async function hostStartGame() {
   const room = snap.val();
   if (!room) return;
   const count = Object.keys(room.players || {}).length;
-  if (count < 2) { alert('Il faut au moins 2 joueurs pour lancer la partie !'); return; }
+  if (count < 2) { showToast('⚠️ Il faut au moins 2 joueurs pour lancer !', 'error', 3000); return; }
 
   // Passer le statut à 'playing' — tous les listeners vont réagir
   await database.ref('rooms/' + currentRoomId + '/status').set('playing');
@@ -8395,7 +8410,7 @@ async function challengePlayer(targetUid, targetName) {
   duelOppName = targetName;
   openRoomLobby(roomId, questions);
 
-  alert(`⚔️ Défi envoyé à ${targetName} ! En attente de sa réponse...`);
+  showToast(`⚔️ Défi envoyé à ${targetName} ! En attente de sa réponse...`, 'gold', 4000);
 }
 
 // ── Historique duels ───────────────────────────────────────────
@@ -8580,7 +8595,7 @@ async function manualSave() {
   await savePlayerToFirebase();
   await updateLeaderboardEntry();
   _lbLastUpdate = Date.now();
-  alert('💾 Progression sauvegardée !');
+  showToast('💾 Progression sauvegardée !', 'success', 2000);
 }
 
 window.addEventListener('beforeunload', () => { if (player) savePlayerNow(); });
