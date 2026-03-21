@@ -3362,68 +3362,52 @@ async function login() {
     return;
   }
 
-  // ===== SYSTÈME ADMIN EN LIGNE =====
-  // Les comptes admins sont vérifiés via Firebase (admins/<username>)
-  // Authentification anonyme → lecture du rôle admin dans la DB
-  const usernameKey = username.toLowerCase();
-
-  if (firebaseReady) {
-    // Vérifier si ce username est un admin dans Firebase
-    let adminSnap = null;
-    try {
-      adminSnap = await database.ref('admins/' + usernameKey).once('value');
-    } catch(e) { /* pas admin ou pas accès */ }
-
-    if (adminSnap && adminSnap.exists()) {
-      const adminData = adminSnap.val();
-      // Vérifier le code admin stocké dans Firebase
-      if (adminData.code && adminData.code !== code) {
-        alert('❌ Code administrateur incorrect !');
-        return;
-      }
-
-      // Connexion anonyme pour avoir un vrai UID Firebase
-      let adminCred = null;
+  // Admins locaux (toujours en local, sans Firebase)
+  const ADMINS = [
+    { username: 'titi',    code: '120511', display: 'Titi'    },
+    { username: 'darius',  code: '#2012#', display: 'Darius'  },
+    { username: 'guigous', code: '120511', display: 'Guigous' },
+  ];
+  const matchedAdmin = ADMINS.find(a => username.toLowerCase() === a.username && code === a.code);
+  if (matchedAdmin) {
+    player = {
+      username: matchedAdmin.display, code: code, level: 1, xp: 0,
+      coins: 999999, maxLevel: 10000, badges: ['👑 ADMIN'], isAdmin: true,
+      inventory: { hints: 999, skips: 999, secondChances: 999, xpBoost: 999 },
+      avatarData: null, stats: { questionsAnswered: 0, bossesDefeated: 0 },
+      playTime: 0, createdAt: Date.now()
+    };
+    currentUserId = 'admin_' + matchedAdmin.username;
+    if (firebaseReady) {
       try {
-        adminCred = await auth.signInAnonymously();
-      } catch(authErr) {
-        console.warn('Admin anon auth failed:', authErr.message);
-      }
-
-      if (adminCred && adminCred.user) {
-        currentUserId = adminCred.user.uid;
-      } else {
-        currentUserId = 'admin_' + usernameKey + '_' + Date.now();
-      }
-
-      // Charger les données admin existantes depuis Firebase
-      const savedSnap = await database.ref('players/' + currentUserId).once('value').catch(()=>null);
-      const saved = savedSnap && savedSnap.exists() ? savedSnap.val() : {};
-
-      player = {
-        username: adminData.display || username, code: code,
-        level: saved.level || 1, xp: saved.xp || 0,
-        coins: saved.coins !== undefined ? saved.coins : 999999,
-        maxLevel: saved.maxLevel || 10000,
-        badges: saved.badges || ['👑 ADMIN'],
-        isAdmin: true,
-        inventory: saved.inventory || { hints: 999, skips: 999, secondChances: 999, xpBoost: 999 },
-        avatarData: saved.avatarData || null,
-        stats: saved.stats || { questionsAnswered: 0, bossesDefeated: 0 },
-        playTime: saved.playTime || 0,
-        createdAt: saved.createdAt || Date.now()
-      };
-
-      try {
-        // Sauvegarder/mettre à jour le profil admin dans Firebase
-        await database.ref('players/' + currentUserId).update({
-          isAdmin: true,
-          username: player.username,
-          lastLogin: Date.now()
-        });
-        // Mettre à jour le leaderboard
+        // Authentification Firebase pour que les règles de sécurité acceptent les écritures (leaderboard, players)
+        const adminEmail = `admin_${matchedAdmin.username}@schoolmes.game`;
+        let adminCred = null;
+        try {
+          adminCred = await auth.signInWithEmailAndPassword(adminEmail, code);
+        } catch(authErr) {
+          if (authErr.code === 'auth/user-not-found' || authErr.code === 'auth/invalid-credential' || authErr.code === 'auth/invalid-email') {
+            adminCred = await auth.createUserWithEmailAndPassword(adminEmail, code);
+          } else {
+            // Fallback anonyme si le compte existe déjà avec un autre mot de passe
+            try { adminCred = await auth.signInAnonymously(); } catch(_) {}
+          }
+        }
+        // Utiliser le vrai UID Firebase (indispensable pour les règles de sécurité)
+        if (adminCred && adminCred.user) {
+          currentUserId = adminCred.user.uid;
+        }
+        const snap = await database.ref('players/' + currentUserId).once('value');
+        if (snap.exists()) {
+          const saved = snap.val();
+          player = { ...player, ...saved, isAdmin: true, badges: saved.badges || ['👑 ADMIN'] };
+        }
+        // Toujours forcer isAdmin:true en Firebase
+        player.isAdmin = true;
+        await database.ref('players/' + currentUserId).update({ isAdmin: true, username: matchedAdmin.display });
+        // Écriture complète dans le leaderboard pour apparaître dans le classement
         await database.ref('leaderboard/' + currentUserId).set({
-          username: player.username,
+          username: matchedAdmin.display,
           isAdmin: true,
           level: player.level || 1,
           maxLevel: player.maxLevel || 10000,
@@ -3436,15 +3420,14 @@ async function login() {
           schoolLevel: getSettings().schoolLevel || 'all'
         });
       } catch(e) { console.warn('Admin Firebase sync:', e.message); }
-
-      startAutoSave();
-      startEventListener();
-      showScreen('homeScreen');
-      updateHomeScreen();
-      startMsgListener();
-      updateMsgDot();
-      return;
     }
+    startAutoSave();
+    startEventListener(); // Écouter les événements Firebase en temps réel
+    showScreen('homeScreen');
+    updateHomeScreen();
+    startMsgListener();
+    updateMsgDot();
+    return;
   }
 
   // Mode local si Firebase non dispo
