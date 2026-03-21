@@ -4725,7 +4725,7 @@ function renderOnlineList(el, players) {
         <div class="online-player-card ${p.isOnline ? 'is-online' : 'is-offline'}">
           <div style="width:12px;height:12px;border-radius:50%;background:${statusColor};box-shadow:0 0 8px ${statusColor};flex-shrink:0;"></div>
           <div style="flex:1;">
-            <div style="font-size:0.65rem;color:#fbbf24;">${p.username}${isMe ? ' <span style="color:#10b981;">(toi)</span>' : ''}</div>
+            <div style="font-size:0.65rem;color:#e2e8f0;">${p.username}${isMe ? ' <span style="color:#10b981;">(toi)</span>' : ''}</div>
             <div style="font-size:0.5rem;color:#9ca3af;">${statusText} &nbsp;•&nbsp; Niv.${p.level||1} &nbsp;•&nbsp; 🗺️${p.maxLevel||1}</div>
             ${!p.isOnline && timeSince ? `<div style="font-size:0.45rem;color:#6b7280;">Vu il y a ${timeSince}</div>` : ''}
           </div>
@@ -7862,8 +7862,8 @@ function openRoomLobby(roomId, questions) {
       listEl.innerHTML = players.map(([uid, p]) => `
         <div class="pvp-player-card ready" style="justify-content:space-between;margin:6px 0;">
           <span style="font-size:1.1rem;">👤</span>
-          <span style="font-size:0.65rem;color:#fbbf24;flex:1;text-align:left;margin-left:10px;">
-            ${p.name} ${uid === room.hostUid ? '<span style="color:#f59e0b;font-size:0.5rem;">👑 Hôte</span>' : ''}
+          <span style="font-size:0.65rem;color:${p.isAdmin ? '#fbbf24' : '#e2e8f0'};flex:1;text-align:left;margin-left:10px;">
+            ${p.isAdmin ? '👑 ' : ''}${p.name}${p.isAdmin ? ' <span style="font-size:0.45rem;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#000;padding:2px 7px;border-radius:8px;font-weight:bold;">ADMIN</span>' : ''} ${uid === room.hostUid ? '<span style="color:#f59e0b;font-size:0.5rem;">🎖️ Hôte</span>' : ''}
           </span>
           <span style="font-size:0.55rem;color:#10b981;">Niv. ${p.level || 1}</span>
           <span style="font-size:0.55rem;color:#10b981;margin-left:8px;">✅</span>
