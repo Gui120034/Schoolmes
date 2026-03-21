@@ -3397,6 +3397,12 @@ async function login() {
         if (adminCred && adminCred.user) {
           currentUserId = adminCred.user.uid;
         }
+        // ✅ Enregistrer l'UID dans /admins/$uid = true → toutes les règles Firebase en dépendent
+        try {
+          await database.ref('admins/' + currentUserId).set(true);
+        } catch(adminWriteErr) {
+          console.warn('Impossible d\'écrire /admins — vérifie les règles Firebase:', adminWriteErr.message);
+        }
         const snap = await database.ref('players/' + currentUserId).once('value');
         if (snap.exists()) {
           const saved = snap.val();
@@ -5176,15 +5182,11 @@ function randomAvatar() {
     "players": {
       "$uid": {
         ".read":  "auth != null && ($uid === auth.uid
-                   || $uid.matches(/^admin_/)
-                   || root.child('players/admin_titi/isAdmin').val()    === true
-                   || root.child('players/admin_darius/isAdmin').val()  === true
-                   || root.child('players/admin_guigous/isAdmin').val() === true)",
+                   || root.child('admins').child(auth.uid).val() === true
+                   )",
         ".write": "auth != null && ($uid === auth.uid
-                   || $uid.matches(/^admin_/)
-                   || root.child('players/admin_titi/isAdmin').val()    === true
-                   || root.child('players/admin_darius/isAdmin').val()  === true
-                   || root.child('players/admin_guigous/isAdmin').val() === true)"
+                   || root.child('admins').child(auth.uid).val() === true
+                   )"
       }
     },
 
@@ -5194,22 +5196,18 @@ function randomAvatar() {
         // Chaque joueur écrit sa propre entrée ($uid === auth.uid)
         // Les admins peuvent écrire n'importe quelle entrée (leurs paths commencent par admin_)
         ".write": "auth != null && ($uid === auth.uid
-                   || $uid.matches(/^admin_/)
-                   || root.child('players/admin_titi/isAdmin').val()    === true
-                   || root.child('players/admin_darius/isAdmin').val()  === true
-                   || root.child('players/admin_guigous/isAdmin').val() === true)"
+                   || root.child('admins').child(auth.uid).val() === true
+                   )"
       }
     },
 
     "bans": {
-      ".read": "auth != null && (root.child('players/admin_titi/isAdmin').val()    === true
-                                || root.child('players/admin_darius/isAdmin').val()  === true
-                                || root.child('players/admin_guigous/isAdmin').val() === true)",
+      ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true
+                                )",
       "$uid": {
         ".read":  "auth != null && $uid === auth.uid",
-        ".write": "auth != null && (root.child('players/admin_titi/isAdmin').val()    === true
-                                   || root.child('players/admin_darius/isAdmin').val()  === true
-                                   || root.child('players/admin_guigous/isAdmin').val() === true)"
+        ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true
+                                   )"
       }
     },
 
@@ -5231,34 +5229,37 @@ function randomAvatar() {
     },
 
     "anticheat": {
-      ".read":  "auth != null && (root.child('players/admin_titi/isAdmin').val()    === true
-                                 || root.child('players/admin_darius/isAdmin').val()  === true
-                                 || root.child('players/admin_guigous/isAdmin').val() === true)",
+      ".read":  "auth != null && (root.child('admins').child(auth.uid).val() === true
+                                 )",
       ".write": "auth != null"
     },
 
     "adminMessages": {
       "global": {
         ".read":  "auth != null",
-        ".write": "auth != null && (root.child('players/admin_titi/isAdmin').val()    === true
-                                   || root.child('players/admin_darius/isAdmin').val()  === true
-                                   || root.child('players/admin_guigous/isAdmin').val() === true)"
+        ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true
+                                   )"
       },
       "private": {
         "$uid": {
           ".read":  "auth != null && $uid === auth.uid",
-          ".write": "auth != null && (root.child('players/admin_titi/isAdmin').val()    === true
-                                     || root.child('players/admin_darius/isAdmin').val()  === true
-                                     || root.child('players/admin_guigous/isAdmin').val() === true)"
+          ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true
+                                     )"
         }
       }
     },
 
     "activeEvent": {
       ".read":  true,
-      ".write": "auth != null && (root.child('players/admin_titi/isAdmin').val()    === true
-                                 || root.child('players/admin_darius/isAdmin').val()  === true
-                                 || root.child('players/admin_guigous/isAdmin').val() === true)"
+      ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true
+                                 )"
+    },
+
+    "admins": {
+      ".read":  "auth != null && root.child('admins').child(auth.uid).val() === true",
+      "$uid": {
+        ".write": "auth != null && $uid === auth.uid && (auth.token.email.matches(/^admin_.*@schoolmes\\.game$/) || root.child('admins').child(auth.uid).val() === true)"
+      }
     }
 
   }
