@@ -3203,7 +3203,7 @@ const SHOP_ITEMS = [
   { id: 22, emoji: '🧠', name: 'Badge Génie',      desc: 'Pour les cerveaux hors-norme',        price: 3000, category: '🏅 Badges' },
   { id: 23, emoji: '🏆', name: 'Badge Champion',   desc: 'Pour les vrais vainqueurs',           price: 4000, category: '🏅 Badges' },
   // ---- SPÉCIAUX ----
-  { id: 24, emoji: '🎲', name: 'Loterie',          desc: 'Tente ta chance : 50–2000 pièces',    price: 100,  category: '✨ Spéciaux' },
+  { id: 24, emoji: '🎲', name: 'Loterie',          desc: 'Tente ta chance : 50–500 pièces',     price: 300,  category: '✨ Spéciaux' },
   { id: 25, emoji: '📦', name: 'Coffre Mystère',   desc: 'Contient un bonus surprise !',        price: 250,  category: '✨ Spéciaux' },
   { id: 26, emoji: '🎁', name: 'Mega Coffre',      desc: 'Coffre premium = gros bonus',         price: 600,  category: '✨ Spéciaux' },
   { id: 27, emoji: '♻️', name: 'Reset Erreurs',    desc: 'Remet à 0 tes erreurs de session',   price: 1500, category: '✨ Spéciaux' },
@@ -4956,19 +4956,29 @@ function renderShop() {
   });
 }
 
+let _lastBuyTime = 0;
+
 function buyItem(id) {
+  // 🔒 Anti-glitch : rate limit — max 1 achat toutes les 500ms
+  const now = Date.now();
+  if (now - _lastBuyTime < 500) return;
+  _lastBuyTime = now;
+
   const item = SHOP_ITEMS.find(i => i.id === id);
   if (!item) return;
   
   const finalPrice = isAmiAdmin() ? Math.floor(item.price * 0.9) : item.price;
   if (player.coins < finalPrice) return;
-  
+
+  // 🔒 Snapshot du solde avant achat pour rollback si nécessaire
+  const coinsBeforeBuy = player.coins;
   player.coins -= finalPrice;
+  if (player.coins < 0) { player.coins = coinsBeforeBuy; return; } // sécurité absolue
   
   if      (id === 1)  { player.inventory.hints++; }
   else if (id === 2)  { player.inventory.skips++; }
   else if (id === 3)  { player.inventory.secondChances++; }
-  else if (id === 4)  { player.coins += 500; }
+  // id 4 supprimé (item fantôme — donnait +500 pièces gratuitement)
   else if (id === 5)  { player.inventory.xpBoost += 10; }
   else if (id === 6 || id === 7 || id === 18 || id === 19 || id === 20 || id === 21 || id === 22 || id === 23) {
     const badge = item.emoji + ' ' + item.name;
@@ -4981,15 +4991,13 @@ function buyItem(id) {
   else if (id === 11) { player.inventory.shields = (player.inventory.shields || 0) + 1; }
   else if (id === 12) { player.inventory.aimers = (player.inventory.aimers || 0) + 1; }
   else if (id === 13) { player.inventory.freezes = (player.inventory.freezes || 0) + 1; }
-  // Pièces
-  else if (id === 14) { player.coins += 2000; }
-  else if (id === 15) { player.coins += 5000; }
+  // id 14, 15 supprimés (items fantômes — donnaient +2000 / +5000 pièces gratuitement)
   // Boosts XP
   else if (id === 16) { player.inventory.xpBoost3 = (player.inventory.xpBoost3 || 0) + 10; }
   else if (id === 17) { player.inventory.coinBoost = (player.inventory.coinBoost || 0) + 20; }
   // Spéciaux
   else if (id === 24) {
-    const gains = [50, 100, 150, 200, 300, 500, 1000, 2000];
+    const gains = [25, 50, 75, 100, 150, 200, 300, 500];
     const gain = gains[Math.floor(Math.random() * gains.length)];
     player.coins += gain;
     savePlayer(); renderShop(); updateHomeScreen();
@@ -7141,16 +7149,42 @@ const DAILY_REWARDS = [
   { day: 7, reward: '🌟 MEGA BONUS: 500💰 + 3 Indices + Boost XP!', fn: () => { player.coins+=500; player.inventory.hints=(player.inventory.hints||0)+3; player.inventory.xpBoost=(player.inventory.xpBoost||0)+10; } },
 ];
 
-function checkDailyLogin() {
+async function checkDailyLogin() {
   if (!player) return;
   const today = new Date().toDateString();
   if (player.lastLoginDate === today) return;
-  
+
+  // 🔒 Anti-glitch : si Firebase dispo, re-vérifier la date côté serveur
+  // pour éviter qu'un clear localStorage re-déclenche la récompense
+  if (firebaseReady && currentUserId && !currentUserId.startsWith('local_')) {
+    try {
+      const snap = await database.ref('players/' + currentUserId).once('value');
+      const remoteData = snap.val();
+      if (remoteData) {
+        // Synchroniser les champs critiques depuis Firebase
+        if (remoteData.lastLoginDate === today && remoteData.dailyRewardClaimed) {
+          // Récompense déjà prise aujourd'hui côté serveur → mettre à jour le local sans afficher la bannière
+          player.lastLoginDate = today;
+          player.dailyRewardClaimed = true;
+          player.loginStreak = remoteData.loginStreak || player.loginStreak;
+          return;
+        }
+        // Synchroniser la date de dernière connexion depuis le serveur
+        if (remoteData.lastLoginDate && remoteData.lastLoginDate !== player.lastLoginDate) {
+          player.lastLoginDate = remoteData.lastLoginDate;
+          player.loginStreak = remoteData.loginStreak || player.loginStreak;
+          player.dailyRewardClaimed = remoteData.dailyRewardClaimed || false;
+          if (player.lastLoginDate === today) return;
+        }
+      }
+    } catch(e) { /* silencieux, on continue */ }
+  }
+
   // Reset claimed status for new day
   player.dailyRewardClaimed = false;
   player.lastLoginDate = today;
   player.loginStreak = (player.loginStreak || 0) + 1;
-  
+
   // Reset streak if missed a day
   if (player.lastLoginCheck) {
     const lastDate = new Date(player.lastLoginCheck);
@@ -7158,7 +7192,7 @@ function checkDailyLogin() {
     if (diff > 1.5) player.loginStreak = 1;
   }
   player.lastLoginCheck = new Date().toISOString();
-  
+
   document.getElementById('dailyLoginRewardBanner').style.display = 'block';
 }
 
@@ -7200,11 +7234,25 @@ function openDailyRewardModal() {
 
 function claimDailyReward(btn) {
   if (!player || player.dailyRewardClaimed) return;
+
+  // 🔒 Anti-glitch : double vérification de la date même après localStorage clear
+  const today = new Date().toDateString();
+  if (player.lastLoginDate !== today) return; // safety check
+
   const streak = player.loginStreak || 1;
   const dayIndex = ((streak - 1) % 7);
   DAILY_REWARDS[dayIndex].fn();
   player.dailyRewardClaimed = true;
+  player._dailyClaimTimestamp = Date.now(); // timestamp de claim pour détection
   savePlayer();
+  // Sauvegarder immédiatement en Firebase pour éviter le reset localStorage
+  if (firebaseReady && currentUserId && !currentUserId.startsWith('local_')) {
+    database.ref('players/' + currentUserId).update({
+      dailyRewardClaimed: true,
+      lastLoginDate: today,
+      _dailyClaimTimestamp: Date.now()
+    }).catch(() => {});
+  }
   if (btn) { btn.textContent = '✅ Récupérée !'; btn.disabled = true; }
   const banner = document.getElementById('dailyLoginRewardBanner');
   if (banner) banner.style.display = 'none';
@@ -8252,6 +8300,15 @@ function endDuel() {
     const totalPlayers = sorted.length;
     const isDraw = sorted.filter(([, p]) => p.score === duelMyScore).length > 1 && myRank === 1;
 
+    // 🔒 Anti-glitch : aucune récompense si joué seul (sans adversaire réel)
+    if (totalPlayers < 2) {
+      showToast('⚠️ Partie annulée : aucun adversaire détecté, aucune récompense.', 'error', 4000);
+      currentRoomId = null;
+      showScreen('homeScreen');
+      updateHomeScreen();
+      return;
+    }
+
     // Récompenses selon le classement
     let coinsGain, xpGain;
     if (myRank === 1) { coinsGain = DUEL_WIN_COINS; xpGain = DUEL_WIN_XP; }
@@ -8540,6 +8597,24 @@ const LB_UPDATE_INTERVAL = 120000; // Leaderboard max toutes les 2 min
 // savePlayer : localStorage immédiat + Firebase debouncé 15s
 async function savePlayer() {
   if (!player) return;
+
+  // 🔒 Anti-glitch : plafond et sanité des valeurs avant toute sauvegarde
+  if (!player.isAdmin) {
+    const MAX_COINS = 9999999;
+    const MAX_ITEMS = 999;
+    if ((player.coins || 0) > MAX_COINS) player.coins = MAX_COINS;
+    if (player.coins < 0) player.coins = 0;
+    if (player.inventory) {
+      for (const key of ['hints', 'skips', 'secondChances', 'xpBoost', 'shields', 'aimers', 'freezes', 'coinBoost', 'bonusLives']) {
+        if ((player.inventory[key] || 0) > MAX_ITEMS) player.inventory[key] = MAX_ITEMS;
+        if ((player.inventory[key] || 0) < 0) player.inventory[key] = 0;
+      }
+    }
+    // Bloquer des niveaux impossibles (niv carte > 10000 ou joueur > 10000)
+    if ((player.maxLevel || 1) > 10000) player.maxLevel = 10000;
+    if ((player.level || 1) > 10000) player.level = 10000;
+  }
+
   // 1. Sauvegarde locale immédiate (toujours)
   savePlayerLocal();
   // 2. Firebase : debouncé 15 secondes pour éviter le flood
