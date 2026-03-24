@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
 <!-- SEO & compatibilité navigateurs -->
 <meta name="description" content="Schoolmes - L'aventure éducative avec 10 000 niveaux de quiz !">
@@ -1403,6 +1403,7 @@ body.theme-neon .stat-value { color: #00ff41 !important; }
 .status-dot { width: 8px; height: 8px; border-radius: 50%; }
 .status-dot.open { background: #10b981; box-shadow: 0 0 6px #10b981; animation: dotPulse 1.5s infinite; }
 .status-dot.full { background: #ef4444; }
+.status-dot.closed { background: #ef4444; }
 .status-dot.playing { background: #f59e0b; }
 @keyframes dotPulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
 
@@ -3580,6 +3581,7 @@ async function logout() {
     player = null;
     currentUserId = null;
     _lbLastUpdate = 0;
+    _fbSaveDebounce && clearTimeout(_fbSaveDebounce);
     const gearBtn = document.getElementById('settingsGearBtn');
     if (gearBtn) gearBtn.style.display = 'none';
     showScreen('loginScreen');
@@ -3719,11 +3721,12 @@ async function executeBan() {
   const uid = document.getElementById('ban_target').value;
   const reason = document.getElementById('ban_reason').value.trim();
   const duration = parseInt(document.getElementById('ban_duration').value);
-  const lbSnap = await database.ref('leaderboard/' + uid).once('value');
-  const targetData = lbSnap.val() || {};
 
   if (!uid) { showToast('⚠️ Sélectionne un joueur.', 'error', 3000); return; }
   if (!reason) { showToast('⚠️ Entre une raison pour le ban.', 'error', 3000); return; }
+
+  const lbSnap = await database.ref('leaderboard/' + uid).once('value');
+  const targetData = lbSnap.val() || {};
   const _confirmMsg = '🔨 Bannir ' + (targetData.username || uid) + '?\nRaison : ' + reason + (duration > 0 ? '\nDurée : ' + duration + ' jour(s)' : '\nDurée : Permanent');
   if (!confirm(_confirmMsg)) return;
 
@@ -3877,6 +3880,36 @@ function loadPlayerLocal() {
 // NOTE: savePlayer() et savePlayerNow() sont définis à la fin du script (avec startAutoSave)
 
 // SCREENS
+// ===== AUTO-REFRESH TOUTES LES SECONDES =====
+let _autoRefreshInterval = null;
+
+function _startScreenAutoRefresh(screenId) {
+  _stopScreenAutoRefresh();
+  if (screenId === 'onlinePlayersScreen') {
+    _autoRefreshInterval = setInterval(() => {
+      if (document.getElementById('onlinePlayersScreen')?.classList.contains('active')) {
+        renderOnlinePlayers();
+      }
+    }, 1000);
+  } else if (screenId === 'multiplayerScreen') {
+    _autoRefreshInterval = setInterval(() => {
+      if (document.getElementById('multiplayerScreen')?.classList.contains('active')) {
+        if (typeof mpCurrentTab !== 'undefined') {
+          if (mpCurrentTab === 'rooms') refreshRooms();
+          else if (mpCurrentTab === 'challenge') refreshOnlinePlayers();
+        }
+      }
+    }, 1000);
+  }
+}
+
+function _stopScreenAutoRefresh() {
+  if (_autoRefreshInterval) {
+    clearInterval(_autoRefreshInterval);
+    _autoRefreshInterval = null;
+  }
+}
+
 function showScreen(screenId) {
   const current = document.querySelector('.screen.active');
   const next = document.getElementById(screenId);
@@ -3892,6 +3925,13 @@ function showScreen(screenId) {
   setTimeout(() => next.classList.remove('screen-enter'), 350);
   // Changer la musique
   try { updateMusicForScreen(screenId); } catch(e) { console.warn('Music error:', e); }
+  // Arrêter le refresh précédent si on quitte les écrans en ligne/multi
+  if (screenId !== 'onlinePlayersScreen' && screenId !== 'multiplayerScreen') {
+    _stopScreenAutoRefresh();
+  } else {
+    // Démarrer l'auto-refresh pour les écrans en ligne
+    _startScreenAutoRefresh(screenId);
+  }
 }
 
 // GAME
@@ -3924,7 +3964,7 @@ function renderMap() {
   map.innerHTML = '';
   
   const startLevel = Math.max(1, player.maxLevel - 19);
-  const endLevel = player.maxLevel + 30;
+  const endLevel = Math.min(10000, player.maxLevel + 30);
   
   for (let i = startLevel; i <= endLevel; i++) {
     const tile = document.createElement('div');
@@ -4096,11 +4136,19 @@ function renderBonusBar() {
 
 function useHint() {
   if (player.inventory.hints <= 0) return;
-  const answer = currentQuestion.answer;
-  const revealed = answer.charAt(Math.floor(Math.random() * answer.length));
+  const answer = String(currentQuestion.answer);
+  // Pour les QCM, on donne les premiers caractères de la bonne réponse
+  let hint;
+  if (currentQuestion.type === 'qcm' && currentQuestion.choices) {
+    const correctText = currentQuestion.choices.find(c => normalizeText(c) === normalizeText(answer)) || answer;
+    hint = `"${correctText.charAt(0).toUpperCase()}..."`;
+  } else {
+    const revealed = answer.charAt(Math.floor(Math.random() * answer.length));
+    hint = `la lettre "${revealed.toUpperCase()}"`;
+  }
   player.inventory.hints--;
   savePlayer();
-  showToast(`💡 Indice : La réponse contient la lettre "${revealed.toUpperCase()}"`, 'gold', 4000);
+  showToast(`💡 Indice : La réponse commence par ${hint}`, 'gold', 4000);
   renderBonusBar();
 }
 
@@ -5717,13 +5765,17 @@ async function openAdminGive() {
       </div>
       <div style="display:flex;flex-direction:column;gap:12px;">
         <div>
+          <div style="font-size:0.6rem;color:#9ca3af;margin-bottom:6px;">🔍 Rechercher un joueur</div>
+          <input id="ag_search" type="text" placeholder="Nom du joueur..." oninput="adminFilterPlayers()" style="width:100%;background:#000;color:#fff;border:2px solid #6366f1;border-radius:8px;padding:10px;font-family:'Press Start 2P';font-size:0.6rem;">
+        </div>
+        <div>
           <div style="font-size:0.6rem;color:#9ca3af;margin-bottom:6px;">👤 Joueur cible</div>
           <select id="ag_target" style="width:100%;background:#000;color:#fff;border:2px solid #fbbf24;border-radius:8px;padding:10px;font-family:'Press Start 2P';font-size:0.6rem;">
             ${entries.map(([uid, p]) => `<option value="${uid}">${p.username} (Niv.${p.level||1} • 🗺️${p.maxLevel||1} • 💰${p.coins||0})</option>`).join('')}
           </select>
         </div>
         <div>
-          <div style="font-size:0.6rem;color:#9ca3af;margin-bottom:6px;">🎁 Type de récompense</div>
+          <div style="font-size:0.6rem;color:#9ca3af;margin-bottom:6px;">🎁 Type</div>
           <select id="ag_type" style="width:100%;background:#000;color:#fff;border:2px solid #fbbf24;border-radius:8px;padding:10px;font-family:'Press Start 2P';font-size:0.6rem;">
             <option value="coins">💰 Pièces</option>
             <option value="xp">✨ XP</option>
@@ -5738,7 +5790,10 @@ async function openAdminGive() {
           <div style="font-size:0.6rem;color:#9ca3af;margin-bottom:6px;">🔢 Quantité / Texte badge</div>
           <input id="ag_amount" type="text" placeholder="ex: 500 ou 🎖️ Héros" style="width:100%;background:#000;color:#fff;border:2px solid #fbbf24;border-radius:8px;padding:10px;font-family:'Press Start 2P';font-size:0.6rem;">
         </div>
-        <button class="gold" style="width:100%;padding:15px;" onclick="adminGiveOne()">✅ DONNER</button>
+        <div style="display:flex;gap:10px;">
+          <button class="gold" style="flex:1;padding:15px;" onclick="adminGiveOne()">✅ DONNER</button>
+          <button class="danger" style="flex:1;padding:15px;" onclick="adminRemoveOne()">➖ ENLEVER</button>
+        </div>
       </div>
       <div style="margin-top:20px;">
         <div style="font-size:0.6rem;color:#9ca3af;margin-bottom:10px;">👥 Tous les joueurs (${entries.length})</div>
@@ -5789,6 +5844,58 @@ async function adminGiveOne() {
     });
 
     showToast(`✅ ${amount} ${type} donné à ${target.username} !`, 'success', 3000);
+    document.getElementById('adminOverlay')?.remove();
+  } catch(e) {
+    showToast('❌ Erreur : ' + e.message, 'error', 4000);
+  }
+}
+
+// ── Filtre de recherche dans le select joueur ──────────────────
+function adminFilterPlayers() {
+  const search = (document.getElementById('ag_search')?.value || '').toLowerCase().trim();
+  const select = document.getElementById('ag_target');
+  if (!select) return;
+  const options = select.querySelectorAll('option');
+  let firstMatch = null;
+  options.forEach(opt => {
+    const visible = !search || opt.text.toLowerCase().includes(search);
+    opt.style.display = visible ? '' : 'none';
+    if (visible && !firstMatch) firstMatch = opt.value;
+  });
+  if (firstMatch) select.value = firstMatch;
+}
+
+// ── Enlever des ressources à un joueur ────────────────────────
+async function adminRemoveOne() {
+  const uid = document.getElementById('ag_target').value;
+  const type = document.getElementById('ag_type').value;
+  const amount = document.getElementById('ag_amount').value.trim();
+  if (!uid || !amount) { showToast('⚠️ Remplis tous les champs !', 'error', 3000); return; }
+  if (type === 'badge') { showToast('⚠️ Pour les badges, utilise "Donner" pour les ajouter (enlever manuel requis).', 'error', 4000); return; }
+
+  try {
+    const snap = await database.ref('players/' + uid).once('value');
+    const target = snap.val();
+    if (!target) { showToast('❌ Joueur introuvable dans la DB.', 'error', 3000); return; }
+
+    if (!target.inventory) target.inventory = { hints:0, skips:0, secondChances:0, xpBoost:0 };
+
+    const val = parseInt(amount);
+    if (isNaN(val) || val <= 0) { showToast('⚠️ Quantité invalide !', 'error', 3000); return; }
+
+    if (type === 'coins') target.coins = Math.max(0, (target.coins||0) - val);
+    else if (type === 'xp') target.xp = Math.max(0, (target.xp||0) - val);
+    else target.inventory[type] = Math.max(0, (target.inventory[type]||0) - val);
+
+    await database.ref('players/' + uid).set(target);
+    await database.ref('leaderboard/' + uid).update({
+      username: target.username,
+      level: target.level || 1,
+      maxLevel: target.maxLevel || 1,
+      coins: target.coins || 0
+    });
+
+    showToast(`➖ ${val} ${type} enlevé à ${target.username} !`, 'success', 3000);
     document.getElementById('adminOverlay')?.remove();
   } catch(e) {
     showToast('❌ Erreur : ' + e.message, 'error', 4000);
@@ -7670,7 +7777,7 @@ function doPrestige(btn) {
   player.stats = { questionsAnswered: 0, bossesDefeated: 0 };
   
   savePlayer();
-  document.querySelector('div[style*="z-index:20000"]')?.remove();
+  document.getElementById('prestigeModal')?.remove();
   showScreen('homeScreen');
   updateHomeScreen();
   showToast(`🌟 PRESTIGE ${prestigeLevel} ACTIVÉ ! ${keptCoins} pièces conservées + 5 talents bonus !`, 'gold', 5000);
@@ -8011,6 +8118,7 @@ function startMultiGame(roomId, questions) {
   duelMyCorrect = 0;
   duelOppCorrect = 0;
   currentRoomId = roomId;
+  if (player) player._duelFinished = false; // Initialisation explicite
 
   showScreen('duelScreen');
   updateDuelHUD();
@@ -9281,10 +9389,10 @@ function initBrevetScreen() {
 
 // Patcher showScreen pour initialiser l'écran brevet
 document.addEventListener('DOMContentLoaded', function() {
-  var origFn = window.showScreen;
-  if (origFn) {
+  const _origBrevetShowScreen = window.showScreen;
+  if (_origBrevetShowScreen) {
     window.showScreen = function(id) {
-      origFn(id);
+      _origBrevetShowScreen(id);
       if (id === 'brevetScreen') initBrevetScreen();
     };
   }
@@ -9523,7 +9631,7 @@ function globalBack() {
   const origManual = window.manualSave;
   window.manualSave = async function() {
     if (typeof origManual === 'function') await origManual();
-    showToast('💾 Sauvegarde réussie !', 'success', 2000);
+    // Le toast est déjà affiché par manualSave original — ne pas le doubler
   };
 })();
 
