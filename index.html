@@ -286,6 +286,10 @@ body {
   line-height: 1.5;
   user-select: none;
   -webkit-user-select: none;
+  /* Empêche le saut lors du refresh */
+  min-height: 90px;
+  word-break: keep-all;
+  overflow-wrap: normal;
 }
 .home-menu-card:hover {
   border-color: rgba(251,191,36,0.5);
@@ -313,6 +317,15 @@ body {
 .home-menu-card.card-save   { border-color: rgba(107,114,128,0.4); background: rgba(107,114,128,0.06); }
 .home-menu-card.card-settings { border-color: rgba(107,114,128,0.4); background: rgba(107,114,128,0.06); }
 .home-menu-card.card-logout { border-color: rgba(239,68,68,0.3);   background: rgba(239,68,68,0.05); }
+
+/* Empêche le saut du label de carte */
+.home-menu-card .card-label {
+  display: block;
+  min-height: 2.2em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 /* Notification dot sur une carte */
 .card-notif {
@@ -1363,6 +1376,18 @@ body.theme-neon .stat-value { color: #00ff41 !important; }
   0%,80%,100% { transform: translateY(0); }
   40% { transform: translateY(-6px); }
 }
+
+/* Texte de recherche animé */
+.searching-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #9ca3af;
+  font-size: 0.6rem;
+  padding: 20px;
+}
+.searching-text .dot-bounce span { background: #6366f1; }
 
 /* Challenge notification */
 .challenge-notif {
@@ -2710,40 +2735,40 @@ button {
   <!-- GRILLE DE MENU -->
   <div id="homeMenuGrid">
     <div class="home-menu-card card-play" onclick="tryStartGame()">
-      <div class="card-icon">🎮</div>JOUER
+      <div class="card-icon">🎮</div><span class="card-label">JOUER</span>
     </div>
     <div class="home-menu-card card-multi" onclick="showScreen('multiplayerScreen'); initMultiplayer();">
-      <div class="card-icon">⚔️</div>MULTI&shy;JOUEUR
+      <div class="card-icon">⚔️</div><span class="card-label">MULTIJOUEUR</span>
     </div>
     <div class="home-menu-card card-brevet" onclick="showScreen('brevetScreen');">
-      <div class="card-icon">📚</div>RÉVISIONS BREVET
+      <div class="card-icon">📚</div><span class="card-label">RÉVISIONS BREVET</span>
     </div>
     <div class="home-menu-card card-lb" onclick="showScreen('leaderboardScreen'); renderLeaderboard();">
-      <div class="card-icon">🏆</div>CLASSEMENT
+      <div class="card-icon">🏆</div><span class="card-label">CLASSEMENT</span>
     </div>
     <div class="home-menu-card card-quest" onclick="openQuestsModal()">
-      <div class="card-icon">📋</div>QUÊTES
+      <div class="card-icon">📋</div><span class="card-label">QUÊTES</span>
     </div>
     <div class="home-menu-card card-talent" onclick="openTalentTree()">
-      <div class="card-icon">🌳</div>TALENTS
+      <div class="card-icon">🌳</div><span class="card-label">TALENTS</span>
     </div>
     <div class="home-menu-card card-shop" onclick="showScreen('shopScreen'); renderShop();">
-      <div class="card-icon">🛒</div>BOUTIQUE
+      <div class="card-icon">🛒</div><span class="card-label">BOUTIQUE</span>
     </div>
     <div class="home-menu-card card-online" onclick="showScreen('onlinePlayersScreen'); renderOnlinePlayers();">
-      <div class="card-icon">👥</div>EN LIGNE
+      <div class="card-icon">👥</div><span class="card-label">EN LIGNE</span>
     </div>
     <div class="home-menu-card card-avatar" onclick="showScreen('avatarScreen'); initAvatarEditor();">
-      <div class="card-icon">🎨</div>AVATAR
+      <div class="card-icon">🎨</div><span class="card-label">AVATAR</span>
     </div>
     <div class="home-menu-card card-settings" onclick="showScreen('settingsScreen'); renderSettings();">
-      <div class="card-icon">⚙️</div>RÉGLAGES
+      <div class="card-icon">⚙️</div><span class="card-label">RÉGLAGES</span>
     </div>
     <div class="home-menu-card card-save" onclick="manualSave()">
-      <div class="card-icon">💾</div>SAUVEGARDER
+      <div class="card-icon">💾</div><span class="card-label">SAUVEGARDER</span>
     </div>
     <div class="home-menu-card card-logout" onclick="logout()">
-      <div class="card-icon">🚪</div>DÉCONNEXION
+      <div class="card-icon">🚪</div><span class="card-label">DÉCONNEXION</span>
     </div>
   </div>
 </div>
@@ -2789,7 +2814,7 @@ button {
     <button onclick="renderOnlinePlayers()">🔄 Actualiser</button>
   </div>
   <div id="onlinePlayersList" style="max-height:600px;overflow-y:auto;">
-    <div style="text-align:center;color:#9ca3af;font-size:0.6rem;padding:30px;">⏳ Chargement...</div>
+    <div class="searching-text">Recherche en cours <div class="dot-bounce"><span></span><span></span><span></span></div></div>
   </div>
 </div>
 
@@ -2940,7 +2965,7 @@ button {
       <button onclick="refreshRooms()">🔄 Actualiser</button>
     </div>
     <div id="mpRoomsList" style="max-height:400px;overflow-y:auto;">
-      <div style="text-align:center;color:#9ca3af;font-size:0.6rem;padding:20px;">⏳ Chargement des salons...</div>
+      <div class="searching-text">Recherche en cours <div class="dot-bounce"><span></span><span></span><span></span></div></div>
     </div>
   </div>
 
@@ -2949,7 +2974,7 @@ button {
     <div class="pvp-lobby" style="text-align:center;">
       <div style="font-size:0.7rem;color:#fbbf24;margin-bottom:15px;">⚔️ DÉFIER UN JOUEUR EN LIGNE</div>
       <div id="mpOnlineList" style="max-height:300px;overflow-y:auto;margin-bottom:15px;">
-        <div style="color:#9ca3af;font-size:0.6rem;padding:20px;">⏳ Recherche des joueurs en ligne...</div>
+        <div class="searching-text">Recherche en cours <div class="dot-bounce"><span></span><span></span><span></span></div></div>
       </div>
     </div>
   </div>
@@ -4685,7 +4710,12 @@ async function renderOnlinePlayers() {
     el.innerHTML = '<div style="color:#9ca3af;font-size:0.6rem;text-align:center;padding:30px;">⚠️ Connecte-toi avec un compte Firebase pour voir les joueurs en ligne</div>';
     return;
   }
-  el.innerHTML = '<div style="text-align:center;color:#9ca3af;font-size:0.6rem;padding:30px;">⏳ Chargement...</div>';
+  // N'afficher le spinner que si la liste est vide (premier chargement)
+  // Sinon on garde les cartes existantes visibles pendant le refresh
+  const isEmpty = el.children.length === 0 || el.querySelector('.searching-text');
+  if (isEmpty) {
+    el.innerHTML = '<div class="searching-text">Recherche en cours <div class="dot-bounce"><span></span><span></span><span></span></div></div>';
+  }
   
   try {
     const now = Date.now();
@@ -7896,7 +7926,7 @@ function switchMpTab(tab) {
 async function refreshRooms() {
   const el = document.getElementById('mpRoomsList');
   if (!firebaseReady) { el.innerHTML = '<div style="text-align:center;color:#9ca3af;font-size:0.6rem;padding:20px;">Firebase requis</div>'; return; }
-  el.innerHTML = '<div style="text-align:center;color:#9ca3af;font-size:0.6rem;padding:20px;">⏳ Chargement...</div>';
+  el.innerHTML = '<div class="searching-text">Recherche en cours <div class="dot-bounce"><span></span><span></span><span></span></div></div>';
   try {
     const snap = await database.ref('rooms').orderByChild('status').equalTo('waiting').limitToLast(20).once('value');
     const data = snap.val() || {};
@@ -8524,7 +8554,7 @@ function showDuelResult(iWon, isDraw, coinsGain, xpGain, sorted, myRank) {
 async function refreshOnlinePlayers() {
   const el = document.getElementById('mpOnlineList');
   if (!firebaseReady) { el.innerHTML = '<div style="color:#9ca3af;font-size:0.6rem;text-align:center;padding:20px;">Firebase requis</div>'; return; }
-  el.innerHTML = '<div style="color:#9ca3af;font-size:0.6rem;text-align:center;padding:20px;">⏳ Recherche...</div>';
+  el.innerHTML = '<div class="searching-text">Recherche en cours <div class="dot-bounce"><span></span><span></span><span></span></div></div>';
   try {
     const snap = await database.ref('presence').once('value');
     const data = snap.val() || {};
