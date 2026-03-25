@@ -402,6 +402,24 @@ input {
   text-align: center;
 }
 
+#loginUsername.input-error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 10px rgba(239,68,68,0.5);
+  animation: inputShake 0.3s ease;
+}
+@keyframes inputShake {
+  0%,100% { transform: translateX(0); }
+  25%      { transform: translateX(-4px); }
+  75%      { transform: translateX(4px); }
+}
+#pseudoErrorMsg {
+  display: none;
+  color: #ef4444;
+  font-size: 0.45rem;
+  margin-top: 4px;
+  letter-spacing: 0.05em;
+}
+
 .input-group label {
   display: block;
   margin-bottom: 8px;
@@ -2653,7 +2671,10 @@ button {
 
   <div class="input-group">
     <label>📝 Pseudo</label>
-    <input type="text" id="loginUsername" placeholder="Ton pseudo" onkeypress="if(event.key==='Enter') document.getElementById('loginCode').focus()">
+    <input type="text" id="loginUsername" placeholder="Ton pseudo"
+      onkeypress="if(event.key==='Enter') document.getElementById('loginCode').focus()"
+      oninput="(function(el){ var ok=/^[a-zA-Z0-9]*$/.test(el.value); var e=document.getElementById('pseudoErrorMsg'); if(!ok){el.classList.add('input-error');e.style.display='block';}else{el.classList.remove('input-error');e.style.display='none';} })(this)">
+    <div id="pseudoErrorMsg">⚠️ Caractères spéciaux interdits</div>
   </div>
   
   <div class="input-group">
@@ -3915,7 +3936,7 @@ function _startScreenAutoRefresh(screenId) {
       if (document.getElementById('onlinePlayersScreen')?.classList.contains('active')) {
         renderOnlinePlayers();
       }
-    }, 1000);
+    }, 6000);
   } else if (screenId === 'multiplayerScreen') {
     _autoRefreshInterval = setInterval(() => {
       if (document.getElementById('multiplayerScreen')?.classList.contains('active')) {
@@ -3924,7 +3945,7 @@ function _startScreenAutoRefresh(screenId) {
           else if (mpCurrentTab === 'challenge') refreshOnlinePlayers();
         }
       }
-    }, 1000);
+    }, 6000);
   }
 }
 
@@ -4644,7 +4665,7 @@ function startPlayTimeTracking() {
       _banCheckTick = 0;
       await checkBanStatus(currentUserId);
     }
-  }, 60000);
+  }, 3000);
 }
 
 // ====== ANTICHEAT ======
@@ -4719,7 +4740,7 @@ async function renderOnlinePlayers() {
   
   try {
     const now = Date.now();
-    const ONLINE_THRESHOLD = 90000; // 90s
+    const ONLINE_THRESHOLD = 3000; // 3s (heartbeat toutes les 1s)
     
     if (opCurrentTab === 'online') {
       const snap = await database.ref('presence').once('value');
@@ -6161,33 +6182,51 @@ async function sendAdminMsg() {
 }
 
 // ----- JOUEUR : écouter les messages en temps réel -----
+// ── Cache Firebase des messages lus ──────────────────────────
+let _readMsgCache = null; // Set des IDs lus, chargé depuis Firebase
+
+async function _getReadSet() {
+  if (_readMsgCache !== null) return _readMsgCache;
+  try {
+    const snap = await database.ref('players/' + currentUserId + '/readMessages').once('value');
+    const data = snap.val() || {};
+    _readMsgCache = new Set(Object.keys(data));
+  } catch(e) { _readMsgCache = new Set(); }
+  return _readMsgCache;
+}
+
+async function _markReadFirebase(msgId) {
+  if (!msgId) return;
+  try {
+    const safeKey = msgId.replace(/[.#$[\]]/g, '_');
+    await database.ref('players/' + currentUserId + '/readMessages/' + safeKey).set(true);
+    if (_readMsgCache) _readMsgCache.add(msgId);
+  } catch(e) {}
+}
+
 function startMsgListener() {
-  if (!firebaseReady || !currentUserId || currentUserId.startsWith('local_')) {
-    console.log('[MSG] startMsgListener: conditions non remplies', {firebaseReady, currentUserId});
-    return;
-  }
+  if (!firebaseReady || !currentUserId || currentUserId.startsWith('local_')) return;
   if (player?.isAdmin) return;
 
-  console.log('[MSG] Démarrage listener messages pour:', currentUserId);
+  // Reset cache à chaque login pour forcer rechargement depuis Firebase
+  _readMsgCache = null;
 
   // 1. Afficher immédiatement les messages non lus existants
   _checkOldUnreadMessages();
 
   // 2. Écouter les nouveaux messages en temps réel
-  database.ref('adminMessages/global').on('child_added', (snap) => {
+  database.ref('adminMessages/global').on('child_added', async (snap) => {
     const msg = snap.val();
-    console.log('[MSG] Nouveau message global reçu:', snap.key, msg);
     if (!msg) return;
-    showMsgIfUnread('global_' + snap.key, msg);
+    await showMsgIfUnread('global_' + snap.key, msg);
   }, (err) => {
     console.error('[MSG] Erreur lecture adminMessages/global:', err.message);
   });
 
-  database.ref('adminMessages/private/' + currentUserId).on('child_added', (snap) => {
+  database.ref('adminMessages/private/' + currentUserId).on('child_added', async (snap) => {
     const msg = snap.val();
-    console.log('[MSG] Nouveau message privé reçu:', snap.key, msg);
     if (!msg) return;
-    showMsgIfUnread('private_' + snap.key, msg);
+    await showMsgIfUnread('private_' + snap.key, msg);
   }, (err) => {
     console.error('[MSG] Erreur lecture adminMessages/private:', err.message);
   });
@@ -6195,38 +6234,30 @@ function startMsgListener() {
 
 async function _checkOldUnreadMessages() {
   try {
-    const [gSnap, pSnap] = await Promise.all([
+    const [gSnap, pSnap, read] = await Promise.all([
       database.ref('adminMessages/global').once('value'),
-      database.ref('adminMessages/private/' + currentUserId).once('value')
+      database.ref('adminMessages/private/' + currentUserId).once('value'),
+      _getReadSet()
     ]);
-    const readKey = 'schoolmesReadMsg_' + currentUserId;
-    let read = [];
-    try { read = JSON.parse(localStorage.getItem(readKey) || '[]'); } catch(e) {}
-
     const gData = gSnap.val() || {};
     const pData = pSnap.val() || {};
-
-    // Trouver le premier message non lu (le plus récent)
     const allMsgs = [];
     Object.entries(gData).forEach(([k, v]) => allMsgs.push({ id: 'global_' + k, ...v }));
     Object.entries(pData).forEach(([k, v]) => allMsgs.push({ id: 'private_' + k, ...v }));
     allMsgs.sort((a, b) => (b.ts || 0) - (a.ts || 0));
-
-    const firstUnread = allMsgs.find(m => !read.includes(m.id));
-    if (firstUnread) {
-      showMsgIfUnread(firstUnread.id, firstUnread);
-    }
-  } catch(e) { /* silencieux */ }
+    const firstUnread = allMsgs.find(m => !read.has(m.id));
+    if (firstUnread) showMsgBanner(firstUnread.id, firstUnread);
+  } catch(e) {}
 }
 
-function showMsgIfUnread(msgId, msg) {
-  const readKey = 'schoolmesReadMsg_' + currentUserId;
-  let read = [];
-  try { read = JSON.parse(localStorage.getItem(readKey) || '[]'); } catch(e) {}
-  if (read.includes(msgId)) return;
+async function showMsgIfUnread(msgId, msg) {
+  const read = await _getReadSet();
+  if (read.has(msgId)) return;
+  showMsgBanner(msgId, msg);
+}
 
+function showMsgBanner(msgId, msg) {
   _currentBannerMsgId = msgId;
-
   const screen   = document.getElementById('adminMsgScreen');
   const fromEl   = document.getElementById('adminMsgScreenFrom');
   const subjEl   = document.getElementById('adminMsgScreenSubject');
@@ -6235,26 +6266,19 @@ function showMsgIfUnread(msgId, msg) {
   const crownEl  = document.getElementById('adminMsgCrown');
   const titleEl  = document.getElementById('adminMsgTitle');
   const bannerEl = document.getElementById('adminMsgUpdateBanner');
-
   if (!screen) return;
-
   const isUpdate = msg.msgType === 'update';
   const d = new Date(msg.ts);
   const dateStr = d.toLocaleDateString('fr-FR') + ' à ' + d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
-
-  // Appliquer le style selon le type
   screen.classList.remove('msg-type-update');
   if (isUpdate) screen.classList.add('msg-type-update');
-
   if (crownEl)  crownEl.textContent  = isUpdate ? '🚀' : '📨';
   if (titleEl)  titleEl.textContent  = isUpdate ? 'MISE À JOUR !' : 'MESSAGE ADMIN';
   if (bannerEl) bannerEl.style.display = isUpdate ? 'inline-block' : 'none';
-
   fromEl.textContent  = '👑 De : ' + (msg.from || 'Équipe Admin');
-  subjEl.textContent  = msg.subject || 'Message de l\'équipe Admin';
+  subjEl.textContent  = msg.subject || "Message de l'équipe Admin";
   bodyEl.textContent  = msg.body || '';
   metaEl.textContent  = dateStr + (msg.target === 'all' ? '  •  🌍 Message global' : '  •  📩 Message privé');
-
   screen.classList.add('show');
   document.getElementById('adminMsgDot').classList.add('show');
 }
@@ -6263,13 +6287,9 @@ function closeAdminMsgBanner() {
   document.getElementById('adminMsgScreen').classList.remove('show');
 }
 
-function markCurrentMsgRead() {
+async function markCurrentMsgRead() {
   if (!_currentBannerMsgId) return;
-  const readKey = 'schoolmesReadMsg_' + currentUserId;
-  let read = [];
-  try { read = JSON.parse(localStorage.getItem(readKey) || '[]'); } catch(e) {}
-  if (!read.includes(_currentBannerMsgId)) read.push(_currentBannerMsgId);
-  localStorage.setItem(readKey, JSON.stringify(read));
+  await _markReadFirebase(_currentBannerMsgId);
   document.getElementById('adminMsgScreen').classList.remove('show');
   updateMsgDot();
   _currentBannerMsgId = null;
@@ -6277,22 +6297,18 @@ function markCurrentMsgRead() {
 
 async function updateMsgDot() {
   if (!firebaseReady || !currentUserId || currentUserId.startsWith('local_') || player?.isAdmin) return;
-  const readKey = 'schoolmesReadMsg_' + currentUserId;
-  let read = [];
-  try { read = JSON.parse(localStorage.getItem(readKey) || '[]'); } catch(e) {}
-
   let unread = 0;
   try {
-    const [gSnap, pSnap] = await Promise.all([
+    const [gSnap, pSnap, read] = await Promise.all([
       database.ref('adminMessages/global').once('value'),
-      database.ref('adminMessages/private/' + currentUserId).once('value')
+      database.ref('adminMessages/private/' + currentUserId).once('value'),
+      _getReadSet()
     ]);
     const gData = gSnap.val() || {};
     const pData = pSnap.val() || {};
-    Object.keys(gData).forEach(k => { if (!read.includes('global_' + k)) unread++; });
-    Object.keys(pData).forEach(k => { if (!read.includes('private_' + k)) unread++; });
+    Object.keys(gData).forEach(k => { if (!read.has('global_' + k)) unread++; });
+    Object.keys(pData).forEach(k => { if (!read.has('private_' + k)) unread++; });
   } catch(e) {}
-
   const dot = document.getElementById('adminMsgDot');
   if (dot) {
     if (unread > 0) dot.classList.add('show');
@@ -6303,10 +6319,6 @@ async function updateMsgDot() {
 // ----- Boîte de réception joueur -----
 async function openAdminMsgInbox() {
   if (!firebaseReady || !currentUserId) return;
-  const readKey = 'schoolmesReadMsg_' + currentUserId;
-  let read = [];
-  try { read = JSON.parse(localStorage.getItem(readKey) || '[]'); } catch(e) {}
-
   const overlay = document.createElement('div');
   overlay.id = 'adminInboxOverlay';
   overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.92);z-index:20000;overflow-y:auto;padding:20px;';
@@ -6320,28 +6332,25 @@ async function openAdminMsgInbox() {
     </div>
   `;
   document.body.appendChild(overlay);
-
   try {
-    const [gSnap, pSnap] = await Promise.all([
+    const [gSnap, pSnap, read] = await Promise.all([
       database.ref('adminMessages/global').once('value'),
-      database.ref('adminMessages/private/' + currentUserId).once('value')
+      database.ref('adminMessages/private/' + currentUserId).once('value'),
+      _getReadSet()
     ]);
-
     const msgs = [];
     const gData = gSnap.val() || {};
     const pData = pSnap.val() || {};
     Object.entries(gData).forEach(([k, v]) => msgs.push({ id: 'global_' + k, ...v, type: '🌍 Global' }));
     Object.entries(pData).forEach(([k, v]) => msgs.push({ id: 'private_' + k, ...v, type: '📩 Privé' }));
     msgs.sort((a, b) => (b.ts || 0) - (a.ts || 0));
-
     const listEl = document.getElementById('inboxMsgList');
     if (!msgs.length) {
       listEl.innerHTML = '<div style="text-align:center;color:#9ca3af;font-size:0.6rem;padding:40px;">📭 Aucun message pour l\'instant</div>';
       return;
     }
-
     listEl.innerHTML = msgs.map(msg => {
-      const isRead = read.includes(msg.id);
+      const isRead = read.has(msg.id);
       const d = new Date(msg.ts);
       const dateStr = d.toLocaleDateString('fr-FR') + ' ' + d.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
       return `
@@ -6361,14 +6370,8 @@ async function openAdminMsgInbox() {
   }
 }
 
-function markMsgReadById(msgId) {
-  const readKey = 'schoolmesReadMsg_' + currentUserId;
-  let read = [];
-  try { read = JSON.parse(localStorage.getItem(readKey) || '[]'); } catch(e) {}
-  if (!read.includes(msgId)) read.push(msgId);
-  localStorage.setItem(readKey, JSON.stringify(read));
-
-  // Mettre à jour visuellement
+async function markMsgReadById(msgId) {
+  await _markReadFirebase(msgId);
   const item = document.getElementById('inboxItem_' + msgId);
   if (item) {
     item.classList.remove('unread');
@@ -6531,7 +6534,7 @@ function startQuestionTimer() {
         }, 3000);
       }
     }
-  }, 1000);
+  }, 6000);
 }
 
 function updateTimerDisplay(maxTime) {
@@ -7855,17 +7858,26 @@ function startPresence() {
   if (!firebaseReady || !currentUserId || currentUserId.startsWith('local_')) return;
   const ref = database.ref('presence/' + currentUserId);
   ref.set({ username: player.username, level: player.level || 1, maxLevel: player.maxLevel || 1, online: true, ts: Date.now() });
+  // Double sécurité : remove() ET mise à offline si remove() échoue
   ref.onDisconnect().remove();
+  ref.onDisconnect().update({ online: false, ts: Date.now() });
+  // Heartbeat toutes les 20s (au lieu de 30s) pour détection plus rapide
+  if (presenceInterval) clearInterval(presenceInterval);
   presenceInterval = setInterval(() => {
-    if (player) ref.update({ ts: Date.now(), level: player.level || 1 });
-  }, 30000);
+    if (player && firebaseReady) {
+      ref.update({ ts: Date.now(), level: player.level || 1, online: true }).catch(() => {});
+    }
+  }, 6000);
   listenForChallenges();
 }
 
 function stopPresence() {
-  if (presenceInterval) clearInterval(presenceInterval);
+  if (presenceInterval) { clearInterval(presenceInterval); presenceInterval = null; }
   if (!firebaseReady || !currentUserId || currentUserId.startsWith('local_')) return;
-  database.ref('presence/' + currentUserId).remove();
+  // Désactiver le onDisconnect avant de remove manuellement
+  const ref = database.ref('presence/' + currentUserId);
+  ref.onDisconnect().cancel();
+  ref.remove().catch(() => {});
   if (challengeListener) { database.ref('challenges/' + currentUserId).off(); challengeListener = null; }
 }
 
@@ -8298,7 +8310,7 @@ function startDuelTimer() {
       clearInterval(duelTimer);
       if (!duelAnswered) submitDuelAnswer(true); // time out
     }
-  }, 1000);
+  }, 6000);
 }
 
 function updateDuelTimerDisplay() {
@@ -8560,7 +8572,7 @@ async function refreshOnlinePlayers() {
     const data = snap.val() || {};
     const now = Date.now();
     const online = Object.entries(data).filter(([uid, p]) =>
-      uid !== currentUserId && p.online && (now - (p.ts || 0)) < 60000
+      uid !== currentUserId && p.online && (now - (p.ts || 0)) < 3000
     );
     if (online.length === 0) {
       el.innerHTML = '<div style="color:#9ca3af;font-size:0.6rem;text-align:center;padding:30px;">😴 Aucun joueur en ligne actuellement<br><br>Reviens plus tard !</div>';
@@ -8812,8 +8824,31 @@ async function manualSave() {
   showToast('💾 Progression sauvegardée !', 'success', 2000);
 }
 
-window.addEventListener('beforeunload', () => { if (player) savePlayerNow(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden && player) savePlayerNow(); });
+window.addEventListener('beforeunload', () => {
+  if (player) savePlayerNow();
+  stopPresence();
+});
+// pagehide = fermeture sur mobile / Safari
+window.addEventListener('pagehide', () => {
+  stopPresence();
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (player) savePlayerNow();
+    // Marquer temporairement hors-ligne si l'onglet est masqué plus de 60s
+    if (firebaseReady && currentUserId && !currentUserId.startsWith('local_')) {
+      window._hiddenTimer = setTimeout(() => {
+        database.ref('presence/' + currentUserId).update({ online: false }).catch(()=>{});
+      }, 3000);
+    }
+  } else {
+    // Onglet de nouveau visible : annuler le timer et se re-marquer en ligne
+    if (window._hiddenTimer) { clearTimeout(window._hiddenTimer); window._hiddenTimer = null; }
+    if (player && firebaseReady && currentUserId && !currentUserId.startsWith('local_')) {
+      database.ref('presence/' + currentUserId).update({ online: true, ts: Date.now() }).catch(()=>{});
+    }
+  }
+});
 
 // Lancer Firebase dès que la page est chargée
 window.addEventListener('load', () => {
